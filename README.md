@@ -7,8 +7,8 @@ It also contains specialized implementations of channels, such as <b>BroadcastCh
 
 ## Features
 
-- Multiple-producer, single-consumer queues
-- Single-producer, single-consumer queues
+- MPSC (multiple-producer, single-consumer) queues
+- SPSC (single-producer, single-consumer) queues
 - Broadcast channels
 - One-shot channels
 - Different blocking wait strategies: sleeping, parking, yielding, busy spinning
