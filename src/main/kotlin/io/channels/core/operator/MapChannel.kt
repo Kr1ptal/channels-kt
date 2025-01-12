@@ -1,4 +1,4 @@
-package io.channels.core.operation
+package io.channels.core.operator
 
 import io.channels.core.ChannelReceiver
 import io.channels.core.waiting.WaitStrategy

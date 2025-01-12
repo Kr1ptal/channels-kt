@@ -1,23 +1,24 @@
-package io.channels.core.operation
+package io.channels.core.operator
 
 import io.channels.core.ChannelReceiver
 import io.channels.core.waiting.WaitStrategy
-import java.util.function.Predicate
+import java.util.function.Function
 
 /**
- * Filter elements from [parent] using [predicate].
+ * Map each element from [parent] using [mapper], from type [T] to [R]. If [mapper] returns null, the element is
+ * skipped.
  *
- * NOTE: Size of the channel represents the number of elements in [parent], regardless of [predicate] result.
+ * NOTE: Size of the channel represents the number of elements in [parent], regardless of [mapper] result.
  * */
-class FilterChannel<T : Any>(
+class MapNotNullChannel<T : Any, R : Any>(
     private val parent: ChannelReceiver<T>,
-    private val predicate: Predicate<in T>,
-) : ChannelReceiver<T> {
-    override fun iterator(waitStrategy: WaitStrategy): Iterator<T> {
+    private val mapper: Function<T, R?>,
+) : ChannelReceiver<R> {
+    override fun iterator(waitStrategy: WaitStrategy): Iterator<R> {
         val iter = parent.iterator(waitStrategy)
 
-        return object : Iterator<T> {
-            private var next: T? = null
+        return object : Iterator<R> {
+            private var next: R? = null
 
             override fun hasNext(): Boolean {
                 if (next != null) {
@@ -26,9 +27,9 @@ class FilterChannel<T : Any>(
 
                 // loop until we find a matching element or reach the end of the stream
                 while (iter.hasNext()) {
-                    val next = iter.next()
+                    val next = mapper.apply(iter.next())
 
-                    if (predicate.test(next)) {
+                    if (next != null) {
                         this.next = next
                         return true
                     }
@@ -37,7 +38,7 @@ class FilterChannel<T : Any>(
                 return false
             }
 
-            override fun next(): T {
+            override fun next(): R {
                 val ret = next ?: throw NoSuchElementException()
                 next = null
                 return ret
@@ -45,15 +46,16 @@ class FilterChannel<T : Any>(
         }
     }
 
-    override fun tryPoll(): T? {
+    override fun tryPoll(): R? {
         while (true) {
             val next = parent.tryPoll()
             if (next == null) {
                 return null
             }
 
-            if (predicate.test(next)) {
-                return next
+            val mapped = mapper.apply(next)
+            if (mapped != null) {
+                return mapped
             }
         }
     }

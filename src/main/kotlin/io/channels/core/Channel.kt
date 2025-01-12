@@ -1,8 +1,8 @@
 package io.channels.core
 
-import io.channels.core.operation.FilterChannel
-import io.channels.core.operation.MapChannel
-import io.channels.core.operation.MapNotNullChannel
+import io.channels.core.operator.FilterChannel
+import io.channels.core.operator.MapChannel
+import io.channels.core.operator.MapNotNullChannel
 import io.channels.core.waiting.ParkingWaitStrategy
 import io.channels.core.waiting.WaitStrategy
 import java.io.Closeable
