@@ -12,6 +12,7 @@ It also contains specialized implementations of channels, such as <b>BroadcastCh
 - Broadcast channels
 - One-shot channels
 - Different blocking wait strategies: sleeping, parking, yielding, busy spinning
+- Channel operators: `map`, `mapNotNull`, `filter`
 
 ## Usage
 
@@ -28,7 +29,7 @@ channel.offer(3)
 // iterate over the channel, until the channel is closed. 
 
 // blocking the current thread
-for (element in channel) {
+channel.forEach { element ->
     println(element)
 }
 

@@ -91,7 +91,7 @@ class BroadcastChannel<T : Any>(
          * each subscriber.
          * */
         @JvmStatic
-        fun <T> mpscUnbounded(): BroadcastChannel<T> {
+        fun <T : Any> mpscUnbounded(): BroadcastChannel<T> {
             return BroadcastChannel { QueueChannel.mpscUnbounded(it) }
         }
 
@@ -100,7 +100,7 @@ class BroadcastChannel<T : Any>(
          * capacity for each subscriber.
          * */
         @JvmStatic
-        fun <T> mpscBounded(capacity: Int): BroadcastChannel<T> {
+        fun <T : Any> mpscBounded(capacity: Int): BroadcastChannel<T> {
             return BroadcastChannel { QueueChannel.mpscBounded(capacity, it) }
         }
 
@@ -109,7 +109,7 @@ class BroadcastChannel<T : Any>(
          * each subscriber.
          * */
         @JvmStatic
-        fun <T> spscUnbounded(): BroadcastChannel<T> {
+        fun <T : Any> spscUnbounded(): BroadcastChannel<T> {
             return BroadcastChannel { QueueChannel.spscUnbounded(it) }
         }
 
@@ -118,7 +118,7 @@ class BroadcastChannel<T : Any>(
          * capacity for each subscriber.
          * */
         @JvmStatic
-        fun <T> spscBounded(capacity: Int): BroadcastChannel<T> {
+        fun <T : Any> spscBounded(capacity: Int): BroadcastChannel<T> {
             return BroadcastChannel { QueueChannel.spscBounded(capacity, it) }
         }
     }
