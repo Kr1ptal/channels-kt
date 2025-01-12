@@ -11,7 +11,7 @@ import java.util.concurrent.atomic.AtomicBoolean
 /**
  * A [Queue]-based [Channel].
  * */
-class QueueChannel<T>(
+class QueueChannel<T : Any>(
     private val queue: Queue<T>,
     private val onClose: Runnable,
 ) : Channel<T> {
@@ -65,7 +65,7 @@ class QueueChannel<T>(
          * */
         @JvmStatic
         @JvmOverloads
-        fun <T> mpscUnbounded(onClose: Runnable = Runnable {}): QueueChannel<T> {
+        fun <T : Any> mpscUnbounded(onClose: Runnable = Runnable {}): QueueChannel<T> {
             return QueueChannel(MpscUnboundedXaddArrayQueue(DEFAULT_CHUNK_SIZE), onClose)
         }
 
@@ -75,7 +75,7 @@ class QueueChannel<T>(
          * */
         @JvmStatic
         @JvmOverloads
-        fun <T> mpscBounded(capacity: Int, onClose: Runnable = Runnable {}): QueueChannel<T> {
+        fun <T : Any> mpscBounded(capacity: Int, onClose: Runnable = Runnable {}): QueueChannel<T> {
             return QueueChannel(MpscArrayQueue(capacity), onClose)
         }
 
@@ -84,7 +84,7 @@ class QueueChannel<T>(
          * */
         @JvmStatic
         @JvmOverloads
-        fun <T> spscUnbounded(onClose: Runnable = Runnable {}): QueueChannel<T> {
+        fun <T : Any> spscUnbounded(onClose: Runnable = Runnable {}): QueueChannel<T> {
             return QueueChannel(SpscUnboundedArrayQueue(DEFAULT_CHUNK_SIZE), onClose)
         }
 
@@ -94,7 +94,7 @@ class QueueChannel<T>(
          * */
         @JvmStatic
         @JvmOverloads
-        fun <T> spscBounded(capacity: Int, onClose: Runnable = Runnable {}): QueueChannel<T> {
+        fun <T : Any> spscBounded(capacity: Int, onClose: Runnable = Runnable {}): QueueChannel<T> {
             return QueueChannel(SpscArrayQueue<T>(capacity), onClose)
         }
     }

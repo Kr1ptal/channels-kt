@@ -9,25 +9,25 @@ import java.util.function.Consumer
 /**
  * A channel that is both a sender and a receiver.
  * */
-interface Channel<T> : ChannelSender<T>, ChannelReceiver<T>
+interface Channel<T : Any> : ChannelSender<T>, ChannelReceiver<T>
 
 /**
  * A [ChannelSender] that delegates all calls to [parent]. This is useful to make the underlying [ChannelSender]
  * implementation unavailable and unmodifiable to the public.
  * */
-class DelegatingChannelSender<T>(private val parent: ChannelSender<T>) : ChannelSender<T> by parent
+class DelegatingChannelSender<T : Any>(private val parent: ChannelSender<T>) : ChannelSender<T> by parent
 
 /**
  * A [ChannelReceiver] that delegates all calls to [parent]. This is useful to make the underlying [ChannelReceiver]
  * implementation unavailable and unmodifiable to the public.
  * */
-class DelegatingChannelReceiver<T>(private val parent: ChannelReceiver<T>) : ChannelReceiver<T> by parent
+class DelegatingChannelReceiver<T : Any>(private val parent: ChannelReceiver<T>) : ChannelReceiver<T> by parent
 
 /**
  * A sender end of a channel. Same sender can possibly be used by multiple threads at the same time, but only if the
  * underlying queue supports it.
  * */
-interface ChannelSender<in T> : ChannelState, Closeable {
+interface ChannelSender<in T : Any> : ChannelState, Closeable {
     /**
      * Offer an element to the channel, returning true if the element was added to the channel, false otherwise.
      * */
@@ -38,7 +38,7 @@ interface ChannelSender<in T> : ChannelState, Closeable {
  * A receiver end of a channel. Same instance can only be used by one thread at a time, otherwise the behavior is
  * undefined.
  * */
-interface ChannelReceiver<out T> : ChannelState, Closeable, Iterable<T> {
+interface ChannelReceiver<out T : Any> : ChannelState, Closeable {
     /**
      * Returns an iterator that uses [waitStrategy] to block until the next element is available or the channel is
      * closed.
@@ -49,7 +49,15 @@ interface ChannelReceiver<out T> : ChannelState, Closeable, Iterable<T> {
      * Returns a blocking iterator that uses [ParkingWaitStrategy] to block until the next element is available or
      * the channel is closed.
      * */
-    override fun iterator() = iterator(ParkingWaitStrategy())
+    fun iterator() = iterator(ParkingWaitStrategy())
+
+    fun forEach(consumer: Consumer<in T>) {
+        iterator().forEach { consumer.accept(it) }
+    }
+
+    fun forEach(waitStrategy: WaitStrategy, consumer: Consumer<in T>) {
+        iterator(waitStrategy).forEach { consumer.accept(it) }
+    }
 
     /**
      * Iterates over the elements of this channel on a new thread, created by [factory], to avoid blocking the

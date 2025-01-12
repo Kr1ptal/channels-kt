@@ -9,7 +9,7 @@ import java.util.function.Function
 /**
  * A [SubscriptionChannel] that supports multiple subscribers and sends (broadcasts) elements to all subscribers.
  * */
-class BroadcastChannel<T>(
+class BroadcastChannel<T : Any>(
     private val channelFactory: Function<Runnable, Channel<T>>,
 ) : ChannelSender<T>, SubscriptionChannel<T> {
     private val id = AtomicInteger(0)

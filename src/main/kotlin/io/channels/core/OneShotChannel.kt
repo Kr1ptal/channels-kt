@@ -7,7 +7,7 @@ import java.util.concurrent.atomic.AtomicReference
  * A [Channel] that can send / receive a single element. After the element is sent and received, the channel is closed
  * and cannot be used again.
  * */
-class OneShotChannel<T> : Channel<T> {
+class OneShotChannel<T : Any> : Channel<T> {
     private val state = AtomicReference<Any>(null)
 
     @Volatile
