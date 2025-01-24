@@ -11,7 +11,7 @@ It also contains specialized implementations of channels, such as <b>BroadcastCh
 - SPSC (single-producer, single-consumer) queues
 - Broadcast channels
 - One-shot channels
-- Different blocking wait strategies: sleeping, parking, yielding, busy spinning
+- Different blocking wait strategies: sleeping, parking, yielding, busy spinning, suspending (coroutines)
 - Channel operators: `map`, `mapNotNull`, `filter`
 
 ## Usage
@@ -19,8 +19,6 @@ It also contains specialized implementations of channels, such as <b>BroadcastCh
 ### Queues
 
 ```kotlin
-import io.channels.core.QueueChannel
-
 val channel = QueueChannel.mpscUnbounded<Int>()
 channel.offer(1)
 channel.offer(2)
@@ -38,4 +36,8 @@ channel.forEachAsync { element ->
     println(element)
 }
 
-
+// needs "channels-coroutines" dependency
+channel.forEachSuspend { element ->
+    println(element)
+}
+```
