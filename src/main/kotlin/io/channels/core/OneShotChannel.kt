@@ -9,21 +9,26 @@ import java.util.concurrent.atomic.AtomicReference
  * */
 class OneShotChannel<T : Any> : Channel<T> {
     private val state = AtomicReference<Any>(null)
+    private val notifier = ChangeNotifier()
 
-    @Volatile
     private var iterator: BlockingIterator<T>? = null
+
+    override fun onStateChange(listener: Runnable) {
+        notifier.register(listener)
+    }
 
     override fun offer(element: T): Boolean {
         if (state.compareAndSet(null, element)) {
-            iterator?.signalStateChange()
+            notifier.notifyChange()
             return true
         }
         return false
     }
 
     override fun close() {
-        iterator?.signalStateChange()
-        state.set(CLOSED)
+        if (state.getAndSet(CLOSED) !== CLOSED) {
+            notifier.notifyChange()
+        }
     }
 
     @Suppress("UNCHECKED_CAST")
@@ -31,6 +36,9 @@ class OneShotChannel<T : Any> : Channel<T> {
         val ret = state.getAndUpdate { if (it == null) null else CLOSED }
         return if (ret == null || ret === CLOSED) null else ret as T
     }
+
+    override val isClosed: Boolean
+        get() = state.get() === CLOSED
 
     override val size: Int
         get() {
@@ -48,7 +56,7 @@ class OneShotChannel<T : Any> : Channel<T> {
             return EmptyIterator
         }
 
-        val ret = BlockingIterator(this, waitStrategy) { state.get() === CLOSED }
+        val ret = BlockingIterator(this, waitStrategy, ::isClosed)
         return ret.also { iterator = it }
     }
 

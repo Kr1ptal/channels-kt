@@ -13,6 +13,10 @@ class FilterChannel<T : Any>(
     private val parent: ChannelReceiver<T>,
     private val predicate: Predicate<in T>,
 ) : ChannelReceiver<T> {
+    override fun onStateChange(listener: Runnable) {
+        parent.onStateChange(listener)
+    }
+
     override fun iterator(waitStrategy: WaitStrategy): Iterator<T> {
         val iter = parent.iterator(waitStrategy)
 
@@ -57,6 +61,9 @@ class FilterChannel<T : Any>(
             }
         }
     }
+
+    override val isClosed: Boolean
+        get() = parent.isClosed
 
     override val size: Int
         get() = parent.size
