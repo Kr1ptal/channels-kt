@@ -26,9 +26,9 @@ class FilterChannel<T : Any>(
         }
     }
 
-    override fun tryPoll(): T? {
+    override fun poll(): T? {
         while (true) {
-            val next = parent.tryPoll()
+            val next = parent.poll()
             if (next == null) {
                 return null
             }

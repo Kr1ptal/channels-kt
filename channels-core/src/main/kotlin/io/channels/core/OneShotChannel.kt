@@ -31,7 +31,7 @@ class OneShotChannel<T : Any> : Channel<T> {
     }
 
     @Suppress("UNCHECKED_CAST")
-    override fun tryPoll(): T? {
+    override fun poll(): T? {
         val ret = state.getAndUpdate { if (it == null) null else CLOSED }
         return if (ret == null || ret === CLOSED) null else ret as T
     }
@@ -49,7 +49,7 @@ class OneShotChannel<T : Any> : Channel<T> {
         onStateChange { waitStrategy.signalStateChange() }
 
         while (true) {
-            val next = tryPoll()
+            val next = poll()
             if (next != null) {
                 consumer.accept(next)
                 break

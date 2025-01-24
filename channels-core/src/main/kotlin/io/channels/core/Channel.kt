@@ -90,7 +90,7 @@ interface ChannelReceiver<out T : Any> : ChannelState, Closeable {
      * Remove and return the next element from the channel, or null if the channel is empty. This method will never
      * block.
      * */
-    fun tryPoll(): T?
+    fun poll(): T?
 
     /**
      * Map each element from this channel using [mapper], from type [T] to [R].

@@ -39,7 +39,7 @@ class QueueChannel<T : Any>(
         }
     }
 
-    override fun tryPoll(): T? {
+    override fun poll(): T? {
         return queue.poll()
     }
 
@@ -53,7 +53,7 @@ class QueueChannel<T : Any>(
         onStateChange { waitStrategy.signalStateChange() }
 
         while (true) {
-            val next = tryPoll()
+            val next = poll()
             if (next != null) {
                 consumer.accept(next)
                 continue

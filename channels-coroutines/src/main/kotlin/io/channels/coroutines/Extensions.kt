@@ -14,7 +14,7 @@ suspend fun <T : Any> ChannelReceiver<T>.forEachSuspend(consumer: suspend (T) ->
     onStateChange { notifications.trySend(Unit) }
 
     while (true) {
-        val next = tryPoll()
+        val next = poll()
         if (next != null) {
             consumer(next)
             continue

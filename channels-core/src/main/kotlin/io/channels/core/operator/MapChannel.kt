@@ -21,9 +21,9 @@ class MapChannel<T : Any, R : Any>(
             consumer.accept(mapper.apply(next))
         }
     }
-    
-    override fun tryPoll(): R? {
-        val next = parent.tryPoll()
+
+    override fun poll(): R? {
+        val next = parent.poll()
         if (next == null) {
             return null
         }

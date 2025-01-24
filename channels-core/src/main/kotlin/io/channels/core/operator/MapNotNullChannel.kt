@@ -28,9 +28,9 @@ class MapNotNullChannel<T : Any, R : Any>(
         }
     }
 
-    override fun tryPoll(): R? {
+    override fun poll(): R? {
         while (true) {
-            val next = parent.tryPoll()
+            val next = parent.poll()
             if (next == null) {
                 return null
             }
