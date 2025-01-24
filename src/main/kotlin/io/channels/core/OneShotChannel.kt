@@ -2,6 +2,7 @@ package io.channels.core
 
 import io.channels.core.waiting.WaitStrategy
 import java.util.concurrent.atomic.AtomicReference
+import java.util.function.Consumer
 
 /**
  * A [Channel] that can send / receive a single element. After the element is sent and received, the channel is closed
@@ -10,8 +11,6 @@ import java.util.concurrent.atomic.AtomicReference
 class OneShotChannel<T : Any> : Channel<T> {
     private val state = AtomicReference<Any>(null)
     private val notifier = ChangeNotifier()
-
-    private var iterator: BlockingIterator<T>? = null
 
     override fun onStateChange(listener: Runnable) {
         notifier.register(listener)
@@ -46,18 +45,28 @@ class OneShotChannel<T : Any> : Channel<T> {
             return if (ret == null || ret === CLOSED) 0 else 1
         }
 
-    override fun iterator(waitStrategy: WaitStrategy): Iterator<T> {
-        val iter = iterator
-        if (iter != null) {
-            return iter
+    override fun forEach(waitStrategy: WaitStrategy, consumer: Consumer<in T>) {
+        if (isClosed) {
+            return
         }
 
-        if (state.get() === CLOSED) {
-            return EmptyIterator
-        }
+        onStateChange { waitStrategy.signalStateChange() }
 
-        val ret = BlockingIterator(this, waitStrategy, ::isClosed)
-        return ret.also { iterator = it }
+        while (true) {
+            val next = tryPoll()
+            if (next != null) {
+                consumer.accept(next)
+                break
+            }
+
+            // check after polling, so we still drain the queue even if unsubscribed
+            if (isClosed) {
+                break
+            }
+
+            // if no next element, wait until next event is available
+            waitStrategy.waitForNextElement(this)
+        }
     }
 
     companion object {

@@ -52,31 +52,17 @@ interface ChannelReceiver<out T : Any> : ChannelState, Closeable {
     fun onStateChange(listener: Runnable)
 
     /**
-     * Returns an iterator that uses [waitStrategy] to block until the next element is available or the channel is
-     * closed.
+     * Iterates over the elements of this channel, calling [consumer] for each element. The [waitStrategy] is used to
+     * block until the next element is available or the channel is closed.
      * */
-    fun iterator(waitStrategy: WaitStrategy): Iterator<T>
-
-    /**
-     * Returns a blocking iterator that uses [ParkingWaitStrategy] to block until the next element is available or
-     * the channel is closed.
-     * */
-    fun iterator() = iterator(ParkingWaitStrategy())
+    fun forEach(waitStrategy: WaitStrategy, consumer: Consumer<in T>)
 
     /**
      * Iterates over the elements of this channel, calling [consumer] for each element. The [ParkingWaitStrategy] is
      * used to block until the next element is available or the channel is closed.
      * */
     fun forEach(consumer: Consumer<in T>) {
-        iterator().forEach { consumer.accept(it) }
-    }
-
-    /**
-     * Iterates over the elements of this channel, calling [consumer] for each element. The [waitStrategy] is used to
-     * block until the next element is available or the channel is closed.
-     * */
-    fun forEach(waitStrategy: WaitStrategy, consumer: Consumer<in T>) {
-        iterator(waitStrategy).forEach { consumer.accept(it) }
+        forEach(ParkingWaitStrategy(), consumer)
     }
 
     /**
@@ -96,7 +82,7 @@ interface ChannelReceiver<out T : Any> : ChannelState, Closeable {
         waitStrategy: WaitStrategy,
         consumer: Consumer<in T>
     ): ChannelReceiver<T> {
-        factory.newThread { iterator(waitStrategy).forEach { consumer.accept(it) } }.start()
+        factory.newThread { forEach(waitStrategy, consumer) }.start()
         return this
     }
 

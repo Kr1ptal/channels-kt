@@ -2,6 +2,7 @@ package io.channels.core.operator
 
 import io.channels.core.ChannelReceiver
 import io.channels.core.waiting.WaitStrategy
+import java.util.function.Consumer
 import java.util.function.Function
 
 /**
@@ -18,34 +19,11 @@ class MapNotNullChannel<T : Any, R : Any>(
         parent.onStateChange(listener)
     }
 
-    override fun iterator(waitStrategy: WaitStrategy): Iterator<R> {
-        val iter = parent.iterator(waitStrategy)
-
-        return object : Iterator<R> {
-            private var next: R? = null
-
-            override fun hasNext(): Boolean {
-                if (next != null) {
-                    return true
-                }
-
-                // loop until we find a matching element or reach the end of the stream
-                while (iter.hasNext()) {
-                    val next = mapper.apply(iter.next())
-
-                    if (next != null) {
-                        this.next = next
-                        return true
-                    }
-                }
-
-                return false
-            }
-
-            override fun next(): R {
-                val ret = next ?: throw NoSuchElementException()
-                next = null
-                return ret
+    override fun forEach(waitStrategy: WaitStrategy, consumer: Consumer<in R>) {
+        parent.forEach(waitStrategy) { next ->
+            val mapped = mapper.apply(next)
+            if (mapped != null) {
+                consumer.accept(mapped)
             }
         }
     }

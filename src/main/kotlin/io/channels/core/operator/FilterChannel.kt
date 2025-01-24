@@ -2,6 +2,7 @@ package io.channels.core.operator
 
 import io.channels.core.ChannelReceiver
 import io.channels.core.waiting.WaitStrategy
+import java.util.function.Consumer
 import java.util.function.Predicate
 
 /**
@@ -17,34 +18,10 @@ class FilterChannel<T : Any>(
         parent.onStateChange(listener)
     }
 
-    override fun iterator(waitStrategy: WaitStrategy): Iterator<T> {
-        val iter = parent.iterator(waitStrategy)
-
-        return object : Iterator<T> {
-            private var next: T? = null
-
-            override fun hasNext(): Boolean {
-                if (next != null) {
-                    return true
-                }
-
-                // loop until we find a matching element or reach the end of the stream
-                while (iter.hasNext()) {
-                    val next = iter.next()
-
-                    if (predicate.test(next)) {
-                        this.next = next
-                        return true
-                    }
-                }
-
-                return false
-            }
-
-            override fun next(): T {
-                val ret = next ?: throw NoSuchElementException()
-                next = null
-                return ret
+    override fun forEach(waitStrategy: WaitStrategy, consumer: Consumer<in T>) {
+        parent.forEach(waitStrategy) { next ->
+            if (predicate.test(next)) {
+                consumer.accept(next)
             }
         }
     }

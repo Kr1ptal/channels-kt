@@ -7,6 +7,7 @@ import org.jctools.queues.SpscArrayQueue
 import org.jctools.queues.SpscUnboundedArrayQueue
 import java.util.*
 import java.util.concurrent.atomic.AtomicBoolean
+import java.util.function.Consumer
 
 /**
  * A [Queue]-based [Channel].
@@ -17,8 +18,6 @@ class QueueChannel<T : Any>(
 ) : Channel<T> {
     private val closed = AtomicBoolean(false)
     private val notifier = ChangeNotifier()
-
-    private var iterator: BlockingIterator<T>? = null
 
     override fun onStateChange(listener: Runnable) {
         notifier.register(listener)
@@ -50,18 +49,28 @@ class QueueChannel<T : Any>(
     override val size: Int
         get() = queue.size
 
-    override fun iterator(waitStrategy: WaitStrategy): Iterator<T> {
-        val iter = iterator
-        if (iter != null) {
-            return iter
+    override fun forEach(waitStrategy: WaitStrategy, consumer: Consumer<in T>) {
+        if (isClosed) {
+            return
         }
 
-        if (closed.get()) {
-            return EmptyIterator
-        }
+        onStateChange { waitStrategy.signalStateChange() }
 
-        val ret = BlockingIterator(this, waitStrategy, ::isClosed)
-        return ret.also { iterator = it }
+        while (true) {
+            val next = tryPoll()
+            if (next != null) {
+                consumer.accept(next)
+                continue
+            }
+
+            // check after polling, so we still drain the queue even if unsubscribed
+            if (isClosed) {
+                break
+            }
+
+            // if no next element, wait until next event is available
+            waitStrategy.waitForNextElement(this)
+        }
     }
 
     companion object {
