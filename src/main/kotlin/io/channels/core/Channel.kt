@@ -45,6 +45,13 @@ interface ChannelSender<in T : Any> : ChannelState, Closeable {
  * */
 interface ChannelReceiver<out T : Any> : ChannelState, Closeable {
     /**
+     * Invokes [listener] **after** the state of the channel changes.
+     *
+     * NOTE: the provided [listener] should be lightweight and not perform any blocking operations.
+     * */
+    fun onStateChange(listener: Runnable)
+
+    /**
      * Returns an iterator that uses [waitStrategy] to block until the next element is available or the channel is
      * closed.
      * */
@@ -120,6 +127,11 @@ interface ChannelReceiver<out T : Any> : ChannelState, Closeable {
  * State properties of a [ChannelReceiver] / [ChannelSender].
  * */
 interface ChannelState {
+    /**
+     * Return whether the channel is closed.
+     * */
+    val isClosed: Boolean
+
     /**
      * Current channel size.
      * */

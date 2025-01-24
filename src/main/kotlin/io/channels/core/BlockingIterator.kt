@@ -5,15 +5,15 @@ import io.channels.core.waiting.WaitStrategy
 /**
  * An iterator that blocks using [strategy] until the [receiver] has a next element or is closed.
  * */
-class BlockingIterator<T: Any>(
+class BlockingIterator<T : Any>(
     private val receiver: ChannelReceiver<T>,
     private val strategy: WaitStrategy,
     private val isClosed: () -> Boolean,
 ) : Iterator<T> {
     private var next: T? = null
 
-    fun signalStateChange() {
-        strategy.signalStateChange()
+    init {
+        receiver.onStateChange { strategy.signalStateChange() }
     }
 
     override fun hasNext(): Boolean {

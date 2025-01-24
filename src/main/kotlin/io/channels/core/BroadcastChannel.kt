@@ -43,6 +43,10 @@ class BroadcastChannel<T : Any>(
         return DelegatingChannelReceiver(ret)
     }
 
+    /**
+     * Offer an element to the channel, returning true if the element was added to at least one
+     * channel, false otherwise.
+     * */
     override fun offer(element: T): Boolean {
         if (subscriptions.isEmpty()) {
             return false
@@ -78,6 +82,9 @@ class BroadcastChannel<T : Any>(
             }
         }
     }
+
+    override val isClosed: Boolean
+        get() = closed.get()
 
     /**
      * Current number of subscribers.

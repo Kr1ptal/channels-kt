@@ -14,6 +14,10 @@ class MapNotNullChannel<T : Any, R : Any>(
     private val parent: ChannelReceiver<T>,
     private val mapper: Function<T, R?>,
 ) : ChannelReceiver<R> {
+    override fun onStateChange(listener: Runnable) {
+        parent.onStateChange(listener)
+    }
+
     override fun iterator(waitStrategy: WaitStrategy): Iterator<R> {
         val iter = parent.iterator(waitStrategy)
 
@@ -59,6 +63,9 @@ class MapNotNullChannel<T : Any, R : Any>(
             }
         }
     }
+
+    override val isClosed: Boolean
+        get() = parent.isClosed
 
     override val size: Int
         get() = parent.size

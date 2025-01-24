@@ -16,13 +16,17 @@ class QueueChannel<T : Any>(
     private val onClose: Runnable,
 ) : Channel<T> {
     private val closed = AtomicBoolean(false)
+    private val notifier = ChangeNotifier()
 
-    @Volatile
     private var iterator: BlockingIterator<T>? = null
 
+    override fun onStateChange(listener: Runnable) {
+        notifier.register(listener)
+    }
+
     override fun offer(element: T): Boolean {
-        if (queue.offer(element)) {
-            iterator?.signalStateChange()
+        if (!closed.get() && queue.offer(element)) {
+            notifier.notifyChange()
             return true
         }
 
@@ -31,14 +35,17 @@ class QueueChannel<T : Any>(
 
     override fun close() {
         if (closed.compareAndSet(false, true)) {
-            iterator?.signalStateChange()
             onClose.run()
+            notifier.notifyChange()
         }
     }
 
     override fun tryPoll(): T? {
         return queue.poll()
     }
+
+    override val isClosed: Boolean
+        get() = closed.get()
 
     override val size: Int
         get() = queue.size
@@ -53,7 +60,7 @@ class QueueChannel<T : Any>(
             return EmptyIterator
         }
 
-        val ret = BlockingIterator(this, waitStrategy) { closed.get() }
+        val ret = BlockingIterator(this, waitStrategy, ::isClosed)
         return ret.also { iterator = it }
     }
 
