@@ -50,10 +50,6 @@ class QueueChannel<T : Any>(
         get() = queue.size
 
     override fun forEach(waitStrategy: WaitStrategy, consumer: Consumer<in T>) {
-        if (isClosed) {
-            return
-        }
-
         onStateChange { waitStrategy.signalStateChange() }
 
         while (true) {

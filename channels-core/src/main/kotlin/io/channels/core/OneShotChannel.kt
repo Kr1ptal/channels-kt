@@ -46,10 +46,6 @@ class OneShotChannel<T : Any> : Channel<T> {
         }
 
     override fun forEach(waitStrategy: WaitStrategy, consumer: Consumer<in T>) {
-        if (isClosed) {
-            return
-        }
-
         onStateChange { waitStrategy.signalStateChange() }
 
         while (true) {
