@@ -1,6 +1,7 @@
 package io.channels.coroutines
 
 import io.channels.core.ChannelReceiver
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.channels.Channel
 
 /**
@@ -13,19 +14,24 @@ suspend fun <T : Any> ChannelReceiver<T>.forEachSuspend(consumer: suspend (T) ->
     val notifications = Channel<Unit>(1)
     onStateChange { notifications.trySend(Unit) }
 
-    while (true) {
-        val next = poll()
-        if (next != null) {
-            consumer(next)
-            continue
-        }
+    try {
+        while (true) {
+            val next = poll()
+            if (next != null) {
+                consumer(next)
+                continue
+            }
 
-        // check after polling, so we still drain the queue even if unsubscribed
-        if (isClosed) {
-            break
-        }
+            // check after polling, so we still drain the queue even if unsubscribed
+            if (isClosed) {
+                break
+            }
 
-        // if no next element, suspend until next event
-        notifications.receive()
+            // if no next element, suspend until next event
+            notifications.receive()
+        }
+    } catch (e: CancellationException) {
+        close()
+        throw e
     }
 }
