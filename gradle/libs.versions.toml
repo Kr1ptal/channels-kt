@@ -1,0 +1,45 @@
+[versions]
+kotlin = "2.1.0"
+jacoco-tool = "0.8.11"
+junit = "5.11.4"
+kotest = "5.9.1"
+jmh = "1.37"
+ktlint-tool = "1.3.1"
+
+[libraries]
+kotlin-bom = { module = "org.jetbrains.kotlin:kotlin-bom", version.ref = "kotlin" }
+kotlin-gradle = { module = "org.jetbrains.kotlin:kotlin-gradle-plugin", version.ref = "kotlin" }
+kotlin-coroutines = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-core", version = "1.10.1" }
+
+ktlint-gradle = { module = "org.jlleitschuh.gradle:ktlint-gradle", version = "12.1.0" }
+ktlint-bom = { module = "com.pinterest.ktlint:ktlint-bom", version.ref = "ktlint-tool" }
+ktlint-sarif = { module = "com.pinterest.ktlint:ktlint-cli-reporter-sarif", version.ref = "ktlint-tool" }
+
+jctools = { module = "org.jctools:jctools-core", version = "4.0.5" }
+
+##################### TEST #####################
+junit-api = { module = "org.junit.jupiter:junit-jupiter-api", version.ref = "junit" }
+junit-engine = { module = "org.junit.jupiter:junit-jupiter-engine", version.ref = "junit" }
+junit-params = { module = "org.junit.jupiter:junit-jupiter-params", version.ref = "junit" }
+
+kotest-junit5 = { module = "io.kotest:kotest-runner-junit5-jvm", version.ref = "kotest" }
+kotest-assertions = { module = "io.kotest:kotest-assertions-core-jvm", version.ref = "kotest" }
+kotest-property = { module = "io.kotest:kotest-property-jvm", version.ref = "kotest" }
+kotest-framework = { module = "io.kotest:kotest-framework-datatest", version.ref = "kotest" }
+kotest-assertions-json = { module = "io.kotest:kotest-assertions-json-jvm", version.ref = "kotest" }
+# has different versioning than above dependencies
+kotest-runner = { module = "io.kotest:kotest-runner-console-jvm", version = "4.1.3.2" }
+
+mockk = { module = "io.mockk:mockk-jvm", version = "1.13.16" }
+
+##################### JMH #####################
+jmh-core = { module = "org.openjdk.jmh:jmh-core", version.ref = "jmh" }
+jmh-generator = { module = "org.openjdk.jmh:jmh-generator-annprocess", version.ref = "jmh" }
+
+[bundles]
+##################### TEST #####################
+junit = ["junit-api", "junit-engine", "junit-params"]
+kotest = ["kotest-junit5", "kotest-assertions", "kotest-property", "kotest-framework", "kotest-assertions-json", "kotest-runner"]
+
+[plugins]
+kotlin-jvm = { id = "org.jetbrains.kotlin.jvm", version.ref = "kotlin" }

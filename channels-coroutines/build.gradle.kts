@@ -1,21 +1,12 @@
 plugins {
-    kotlin("jvm")
-}
-
-repositories {
-    mavenCentral()
+    `project-conventions`
+    `maven-publish-conventions`
 }
 
 dependencies {
     api(project(":channels-core"))
+    implementation(libs.kotlin.coroutines)
 
-    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.10.1")
-    testImplementation(kotlin("test"))
-}
-
-tasks.test {
-    useJUnitPlatform()
-}
-kotlin {
-    jvmToolchain(11)
+    testImplementation(libs.bundles.junit)
+    testImplementation(libs.bundles.kotest)
 }

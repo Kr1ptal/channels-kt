@@ -1,22 +1,32 @@
 plugins {
-    kotlin("jvm") version "2.0.21"
-}
-
-group = "io.kriptal.channels"
-version = "0.1.0-SNAPSHOT"
-
-repositories {
-    mavenCentral()
+    `project-conventions`
+    `jacoco-report-aggregation`
+    id("test-report-aggregation")
 }
 
 dependencies {
-    implementation("org.jctools:jctools-core:4.0.5")
-    testImplementation(kotlin("test"))
+    // contains only submodules that are released
+    val releasedSubmodules = listOf(
+        ":channels-core",
+        ":channels-coroutines",
+    )
+
+    releasedSubmodules.forEach {
+        jacocoAggregation(project(it))
+        testReportAggregation(project(it))
+    }
 }
 
-tasks.test {
-    useJUnitPlatform()
+// TODO, see: https://github.com/Kr1ptal/ethers-kt/issues/66
+/*tasks.withType<Test> {
+    finalizedBy(tasks.named<JacocoReport>("testCodeCoverageReport"))
+}*/
+
+tasks.check {
+    dependsOn(tasks.named<TestReport>("testAggregateTestReport"))
 }
-kotlin {
-    jvmToolchain(11)
+
+allprojects {
+    group = "io.kriptal.channels"
+    version = "0.1.0-SNAPSHOT"
 }

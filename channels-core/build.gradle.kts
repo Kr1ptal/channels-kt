@@ -1,22 +1,11 @@
 plugins {
-    kotlin("jvm") version "2.0.21"
-}
-
-group = "io.kriptal.channels"
-version = "0.1.0-SNAPSHOT"
-
-repositories {
-    mavenCentral()
+    `project-conventions`
+    `maven-publish-conventions`
 }
 
 dependencies {
-    implementation("org.jctools:jctools-core:4.0.5")
-    testImplementation(kotlin("test"))
-}
+    implementation(libs.jctools)
 
-tasks.test {
-    useJUnitPlatform()
-}
-kotlin {
-    jvmToolchain(11)
+    testImplementation(libs.bundles.junit)
+    testImplementation(libs.bundles.kotest)
 }
