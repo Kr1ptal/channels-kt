@@ -17,7 +17,7 @@ class SleepingBlockingStrategy(sleepDuration: Duration) : BlockingStrategy {
 
     override fun waitForStateChange(status: ChannelState) {
         while (status.isEmpty) {
-            LockSupport.parkNanos(sleepDurationNanos);
+            LockSupport.parkNanos(sleepDurationNanos)
         }
     }
 
