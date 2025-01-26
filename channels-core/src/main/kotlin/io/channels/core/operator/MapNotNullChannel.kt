@@ -1,7 +1,6 @@
 package io.channels.core.operator
 
 import io.channels.core.ChannelReceiver
-import io.channels.core.waiting.WaitStrategy
 import java.util.function.Consumer
 import java.util.function.Function
 
@@ -19,11 +18,20 @@ class MapNotNullChannel<T : Any, R : Any>(
         parent.onStateChange(listener)
     }
 
-    override fun forEach(waitStrategy: WaitStrategy, consumer: Consumer<in R>) {
-        parent.forEach(waitStrategy) { next ->
+    override fun forEach(consumer: Consumer<in R>) {
+        parent.forEach { next ->
             val mapped = mapper.apply(next)
             if (mapped != null) {
                 consumer.accept(mapped)
+            }
+        }
+    }
+
+    override fun take(): R {
+        while (true) {
+            val mapped = mapper.apply(parent.take())
+            if (mapped != null) {
+                return mapped
             }
         }
     }

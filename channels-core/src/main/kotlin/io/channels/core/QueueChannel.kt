@@ -1,6 +1,7 @@
 package io.channels.core
 
-import io.channels.core.waiting.WaitStrategy
+import io.channels.core.blocking.BlockingStrategy
+import io.channels.core.blocking.ParkingBlockingStrategy
 import org.jctools.queues.MpscArrayQueue
 import org.jctools.queues.MpscUnboundedXaddArrayQueue
 import org.jctools.queues.SpscArrayQueue
@@ -18,14 +19,16 @@ class QueueChannel<T : Any>(
 ) : Channel<T> {
     private val closed = AtomicBoolean(false)
     private val notifier = ChangeNotifier()
+    private var _blockingStrategy: BlockingStrategy? = null
 
     override fun onStateChange(listener: Runnable) {
         notifier.register(listener)
     }
 
     override fun offer(element: T): Boolean {
-        if (!closed.get() && queue.offer(element)) {
+        if (!isClosed && queue.offer(element)) {
             notifier.notifyChange()
+            _blockingStrategy?.signalStateChange()
             return true
         }
 
@@ -36,7 +39,27 @@ class QueueChannel<T : Any>(
         if (closed.compareAndSet(false, true)) {
             onClose.run()
             notifier.notifyChange()
+            _blockingStrategy?.signalStateChange()
         }
+    }
+
+    override fun take(): T {
+        while (true) {
+            val ret = poll()
+            if (ret != null) {
+                return ret
+            }
+
+            // check after polling, so we still drain the queue even if unsubscribed
+            if (isClosed) {
+                break
+            }
+
+            // if no next element, wait until next event is available
+            getOrInitWaitStrategy().waitForStateChange(this)
+        }
+
+        throw InterruptedException("Channel is closed")
     }
 
     override fun poll(): T? {
@@ -49,24 +72,19 @@ class QueueChannel<T : Any>(
     override val size: Int
         get() = queue.size
 
-    override fun forEach(waitStrategy: WaitStrategy, consumer: Consumer<in T>) {
-        onStateChange { waitStrategy.signalStateChange() }
-
+    override fun forEach(consumer: Consumer<in T>) {
         while (true) {
-            val next = poll()
-            if (next != null) {
-                consumer.accept(next)
-                continue
-            }
-
-            // check after polling, so we still drain the queue even if unsubscribed
-            if (isClosed) {
-                break
-            }
-
-            // if no next element, wait until next event is available
-            waitStrategy.waitForNextElement(this)
+            consumer.accept(take())
         }
+    }
+
+    private fun getOrInitWaitStrategy(): BlockingStrategy {
+        var waitStrategy = _blockingStrategy
+        if (waitStrategy == null) {
+            waitStrategy = ParkingBlockingStrategy()
+            _blockingStrategy = waitStrategy
+        }
+        return waitStrategy
     }
 
     companion object {

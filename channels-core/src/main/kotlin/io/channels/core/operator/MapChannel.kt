@@ -1,7 +1,6 @@
 package io.channels.core.operator
 
 import io.channels.core.ChannelReceiver
-import io.channels.core.waiting.WaitStrategy
 import java.util.function.Consumer
 import java.util.function.Function
 
@@ -16,10 +15,14 @@ class MapChannel<T : Any, R : Any>(
         parent.onStateChange(listener)
     }
 
-    override fun forEach(waitStrategy: WaitStrategy, consumer: Consumer<in R>) {
-        parent.forEach(waitStrategy) { next ->
+    override fun forEach(consumer: Consumer<in R>) {
+        parent.forEach { next ->
             consumer.accept(mapper.apply(next))
         }
+    }
+
+    override fun take(): R {
+        return mapper.apply(parent.take())
     }
 
     override fun poll(): R? {
