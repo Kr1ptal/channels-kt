@@ -31,11 +31,6 @@ channel.forEach { element ->
     println(element)
 }
 
-// does NOT block the current thread
-channel.forEachAsync { element ->
-    println(element)
-}
-
 // needs "channels-coroutines" dependency
 channel.forEachSuspend { element ->
     println(element)
