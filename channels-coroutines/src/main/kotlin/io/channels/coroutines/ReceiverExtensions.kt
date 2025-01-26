@@ -35,6 +35,7 @@ suspend fun <T : Any> ChannelReceiver<T>.forEachSuspend(consumer: suspend (T) ->
             notifications.receive()
         }
     } finally {
+        notifications.close()
         close()
     }
 }
