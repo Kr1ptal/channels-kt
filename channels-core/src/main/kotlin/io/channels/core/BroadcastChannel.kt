@@ -30,21 +30,22 @@ class BroadcastChannel<T : Any>(
         }
 
         val ret = channelFactory.apply(onClose)
-        idToSubscription[id] = ret
-        subscriptions.add(ret)
-
-        seqLock++
 
         // if broadcast channel is closed, close the receiver as well
-        if (closed.get()) {
+        if (isClosed) {
             ret.close()
+        } else {
+            idToSubscription[id] = ret
+            subscriptions.add(ret)
         }
+
+        seqLock++
 
         return DelegatingChannelReceiver(ret)
     }
 
     /**
-     * Offer an element to the channel, returning true if the element was added to at least one
+     * Offer an element to all subscribed channels, returning true if the element was added to at least one
      * channel, false otherwise.
      * */
     override fun offer(element: T): Boolean {
@@ -63,6 +64,9 @@ class BroadcastChannel<T : Any>(
         return success
     }
 
+    /**
+     * Closes all subscribed channels, blocking until all channels are closed.
+     * */
     override fun close() {
         if (closed.compareAndSet(false, true)) {
             while (true) {

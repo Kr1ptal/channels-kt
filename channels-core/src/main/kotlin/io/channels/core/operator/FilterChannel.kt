@@ -1,7 +1,6 @@
 package io.channels.core.operator
 
 import io.channels.core.ChannelReceiver
-import io.channels.core.waiting.WaitStrategy
 import java.util.function.Consumer
 import java.util.function.Predicate
 
@@ -18,10 +17,19 @@ class FilterChannel<T : Any>(
         parent.onStateChange(listener)
     }
 
-    override fun forEach(waitStrategy: WaitStrategy, consumer: Consumer<in T>) {
-        parent.forEach(waitStrategy) { next ->
+    override fun forEach(consumer: Consumer<in T>) {
+        parent.forEach { next ->
             if (predicate.test(next)) {
                 consumer.accept(next)
+            }
+        }
+    }
+
+    override fun take(): T {
+        while (true) {
+            val next = parent.take()
+            if (predicate.test(next)) {
+                return next
             }
         }
     }

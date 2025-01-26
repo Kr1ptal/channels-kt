@@ -1,6 +1,7 @@
 package io.channels.core
 
-import io.channels.core.waiting.WaitStrategy
+import io.channels.core.blocking.BlockingStrategy
+import io.channels.core.blocking.ParkingBlockingStrategy
 import java.util.concurrent.atomic.AtomicReference
 import java.util.function.Consumer
 
@@ -11,6 +12,7 @@ import java.util.function.Consumer
 class OneShotChannel<T : Any> : Channel<T> {
     private val state = AtomicReference<Any>(null)
     private val notifier = ChangeNotifier()
+    private var _blockingStrategy: BlockingStrategy? = null
 
     override fun onStateChange(listener: Runnable) {
         notifier.register(listener)
@@ -19,6 +21,7 @@ class OneShotChannel<T : Any> : Channel<T> {
     override fun offer(element: T): Boolean {
         if (state.compareAndSet(null, element)) {
             notifier.notifyChange()
+            _blockingStrategy?.signalStateChange()
             return true
         }
         return false
@@ -27,7 +30,27 @@ class OneShotChannel<T : Any> : Channel<T> {
     override fun close() {
         if (state.getAndSet(CLOSED) !== CLOSED) {
             notifier.notifyChange()
+            _blockingStrategy?.signalStateChange()
         }
+    }
+
+    override fun take(): T {
+        while (true) {
+            val ret = poll()
+            if (ret != null) {
+                return ret
+            }
+
+            // check after polling, so we still drain the queue even if unsubscribed
+            if (isClosed) {
+                break
+            }
+
+            // if no next element, wait until next event is available
+            getOrInitWaitStrategy().waitForStateChange(this)
+        }
+
+        throw InterruptedException("Channel is closed")
     }
 
     @Suppress("UNCHECKED_CAST")
@@ -45,24 +68,21 @@ class OneShotChannel<T : Any> : Channel<T> {
             return if (ret == null || ret === CLOSED) 0 else 1
         }
 
-    override fun forEach(waitStrategy: WaitStrategy, consumer: Consumer<in T>) {
-        onStateChange { waitStrategy.signalStateChange() }
-
-        while (true) {
-            val next = poll()
-            if (next != null) {
-                consumer.accept(next)
-                break
-            }
-
-            // check after polling, so we still drain the queue even if unsubscribed
-            if (isClosed) {
-                break
-            }
-
-            // if no next element, wait until next event is available
-            waitStrategy.waitForNextElement(this)
+    override fun forEach(consumer: Consumer<in T>) {
+        if (isClosed) {
+            return
         }
+
+        consumer.accept(take())
+    }
+
+    private fun getOrInitWaitStrategy(): BlockingStrategy {
+        var waitStrategy = _blockingStrategy
+        if (waitStrategy == null) {
+            waitStrategy = ParkingBlockingStrategy()
+            _blockingStrategy = waitStrategy
+        }
+        return waitStrategy
     }
 
     companion object {

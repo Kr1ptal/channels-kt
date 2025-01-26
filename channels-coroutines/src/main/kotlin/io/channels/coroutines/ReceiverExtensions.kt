@@ -1,8 +1,12 @@
 package io.channels.coroutines
 
 import io.channels.core.ChannelReceiver
-import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.channels.Channel.Factory.RENDEZVOUS
+import kotlinx.coroutines.channels.ReceiveChannel
+import kotlinx.coroutines.launch
 
 /**
  * Iterate over the elements of this channel, calling [consumer] for each element. The coroutine is suspended until the
@@ -30,8 +34,28 @@ suspend fun <T : Any> ChannelReceiver<T>.forEachSuspend(consumer: suspend (T) ->
             // if no next element, suspend until next event
             notifications.receive()
         }
-    } catch (e: CancellationException) {
+    } finally {
         close()
-        throw e
     }
+}
+
+/**
+ * Wrap this [ChannelReceiver] into a coroutine [ReceiveChannel].
+ * */
+fun <T : Any> ChannelReceiver<T>.toCoroutineReceiver(
+    scope: CoroutineScope = CoroutineScope(Dispatchers.Default),
+): ReceiveChannel<T> {
+    // zero-buffered channel
+    val ret = Channel<T>(RENDEZVOUS)
+
+    scope.launch {
+        try {
+            forEachSuspend(ret::send)
+        } finally {
+            ret.close()
+            close()
+        }
+    }
+
+    return ret
 }

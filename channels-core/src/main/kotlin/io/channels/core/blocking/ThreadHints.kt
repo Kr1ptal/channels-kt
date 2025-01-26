@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package io.channels.core.waiting
+package io.channels.core.blocking
 
 import java.lang.invoke.MethodHandle
 import java.lang.invoke.MethodHandles

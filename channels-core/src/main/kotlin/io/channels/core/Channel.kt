@@ -1,18 +1,17 @@
 package io.channels.core
 
+import io.channels.core.blocking.BlockingStrategy
 import io.channels.core.operator.FilterChannel
 import io.channels.core.operator.MapChannel
 import io.channels.core.operator.MapNotNullChannel
-import io.channels.core.waiting.ParkingWaitStrategy
-import io.channels.core.waiting.WaitStrategy
 import java.io.Closeable
-import java.util.concurrent.ThreadFactory
 import java.util.function.Consumer
 import java.util.function.Function
 import java.util.function.Predicate
 
 /**
- * A channel that is both a sender and a receiver.
+ * A channel that is both a sender and a receiver. A channel can possibly have multiple senders, depending on the
+ * underlying implementation, but can have only a single receiver.
  * */
 interface Channel<T : Any> : ChannelSender<T>, ChannelReceiver<T>
 
@@ -34,7 +33,8 @@ class DelegatingChannelReceiver<T : Any>(private val parent: ChannelReceiver<T>)
  * */
 interface ChannelSender<in T : Any> : ChannelState, Closeable {
     /**
-     * Offer an element to the channel, returning true if the element was added to the channel, false otherwise.
+     * Offer an element to the channel, returning true if the element was added to the channel, false otherwise. This
+     * method is non-blocking.
      * */
     fun offer(element: T): Boolean
 }
@@ -45,52 +45,46 @@ interface ChannelSender<in T : Any> : ChannelState, Closeable {
  * */
 interface ChannelReceiver<out T : Any> : ChannelState, Closeable {
     /**
-     * Invokes [listener] **after** the state of the channel changes.
+     * Invokes [listener] **after** a new element is added to the channel or the channel is closed.
      *
-     * NOTE: the provided [listener] should be lightweight and not perform any blocking operations.
+     * NOTE: the provided [listener] should be lightweight and not perform any blocking operations. It can also be
+     * called from multiple threads.
      * */
     fun onStateChange(listener: Runnable)
 
     /**
-     * Iterates over the elements of this channel, calling [consumer] for each element. The [waitStrategy] is used to
-     * block until the next element is available or the channel is closed.
+     * Iterates over the elements of this channel, calling [consumer] for each element. This blocks the calling thread
+     * until the channel is closed.
+     *
+     * @throws InterruptedException if the channel is closed while waiting for an element.
      * */
-    fun forEach(waitStrategy: WaitStrategy, consumer: Consumer<in T>)
+    @Throws(InterruptedException::class)
+    fun forEach(consumer: Consumer<in T>)
 
     /**
-     * Iterates over the elements of this channel, calling [consumer] for each element. The [ParkingWaitStrategy] is
-     * used to block until the next element is available or the channel is closed.
+     * Remove and return the next element from the channel, blocking the calling thread until an element is available.
+     *
+     * See [poll] for a non-blocking version.
+     *
+     * @throws InterruptedException if the channel is closed while waiting for an element.
      * */
-    fun forEach(consumer: Consumer<in T>) {
-        forEach(ParkingWaitStrategy(), consumer)
-    }
-
-    /**
-     * Iterates over the elements of this channel on a new thread, created by [factory], to avoid blocking the
-     * calling thread. The new thread will use the [iterator] with a [ParkingWaitStrategy].
-     * */
-    fun forEachAsync(factory: ThreadFactory, consumer: Consumer<in T>): ChannelReceiver<T> {
-        return forEachAsync(factory, ParkingWaitStrategy(), consumer)
-    }
-
-    /**
-     * Iterates over the elements of this channel on a new thread, created by [factory], to avoid blocking the
-     * calling thread. The new thread will use the [iterator] with provided [waitStrategy].
-     * */
-    fun forEachAsync(
-        factory: ThreadFactory,
-        waitStrategy: WaitStrategy,
-        consumer: Consumer<in T>
-    ): ChannelReceiver<T> {
-        factory.newThread { forEach(waitStrategy, consumer) }.start()
-        return this
-    }
+    @Throws(InterruptedException::class)
+    fun take(): T
 
     /**
      * Remove and return the next element from the channel, or null if the channel is empty. This method will never
      * block.
+     *
+     * See [take] for a blocking version.
      * */
     fun poll(): T?
+
+    /**
+     * Returns a [ChannelReceiver] that uses [blockingStrategy] to block until the next element is available.
+     * */
+    fun withBlockingStrategy(blockingStrategy: BlockingStrategy): ChannelReceiver<T> {
+        return BlockingStrategyChannelReceiver(this, blockingStrategy)
+    }
 
     /**
      * Map each element from this channel using [mapper], from type [T] to [R].
