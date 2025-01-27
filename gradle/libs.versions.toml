@@ -1,5 +1,5 @@
 [versions]
-kotlin = "2.1.0"
+kotlin = "2.1.10"
 jacoco-tool = "0.8.11"
 junit = "5.11.4"
 kotest = "5.9.1"
