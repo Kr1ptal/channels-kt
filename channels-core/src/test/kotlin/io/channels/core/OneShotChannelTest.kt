@@ -1,6 +1,5 @@
 package io.channels.core
 
-import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
 import kotlin.concurrent.thread
@@ -47,14 +46,14 @@ class OneShotChannelTest : FunSpec({
         channel.poll() shouldBe null
     }
 
-    test("take after close throws exception") {
+    test("take after close returns null") {
         val channel = OneShotChannel<String>()
 
         channel.offer("hello") shouldBe true
         channel.size shouldBe 1
         channel.take() shouldBe "hello"
 
-        shouldThrow<InterruptedException> { channel.take() }
+        channel.take() shouldBe null
     }
 
     test("take blocks until element is available") {
@@ -68,7 +67,7 @@ class OneShotChannelTest : FunSpec({
         channel.take() shouldBe "hello"
     }
 
-    test("take throws on close without any element") {
+    test("take returns null on close without any element") {
         val channel = OneShotChannel<String>()
         thread {
             Thread.sleep(250)
@@ -76,7 +75,7 @@ class OneShotChannelTest : FunSpec({
         }
 
         channel.size shouldBe 0
-        shouldThrow<InterruptedException> { channel.take() }
+        channel.take() shouldBe null
         channel.isClosed shouldBe true
     }
 

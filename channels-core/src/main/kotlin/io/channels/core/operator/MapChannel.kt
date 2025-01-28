@@ -21,8 +21,8 @@ class MapChannel<T : Any, R : Any>(
         }
     }
 
-    override fun take(): R {
-        return mapper.apply(parent.take())
+    override fun take(): R? {
+        return mapper.apply(parent.take() ?: return null)
     }
 
     override fun poll(): R? {

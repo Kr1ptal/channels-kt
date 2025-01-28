@@ -55,21 +55,16 @@ interface ChannelReceiver<out T : Any> : ChannelState, Closeable {
     /**
      * Iterates over the elements of this channel, calling [consumer] for each element. This blocks the calling thread
      * until the channel is closed.
-     *
-     * @throws InterruptedException if the channel is closed while waiting for an element.
      * */
-    @Throws(InterruptedException::class)
     fun forEach(consumer: Consumer<in T>)
 
     /**
      * Remove and return the next element from the channel, blocking the calling thread until an element is available.
+     * If the channel is closed and empty, it returns null.
      *
      * See [poll] for a non-blocking version.
-     *
-     * @throws InterruptedException if the channel is closed while waiting for an element.
      * */
-    @Throws(InterruptedException::class)
-    fun take(): T
+    fun take(): T?
 
     /**
      * Remove and return the next element from the channel, or null if the channel is empty. This method will never

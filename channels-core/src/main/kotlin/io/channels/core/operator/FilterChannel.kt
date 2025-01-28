@@ -25,13 +25,14 @@ class FilterChannel<T : Any>(
         }
     }
 
-    override fun take(): T {
+    override fun take(): T? {
         while (true) {
-            val next = parent.take()
+            val next = parent.take() ?: break
             if (predicate.test(next)) {
                 return next
             }
         }
+        return null
     }
 
     override fun poll(): T? {
