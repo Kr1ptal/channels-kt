@@ -43,7 +43,7 @@ suspend fun <T : Any> ChannelReceiver<T>.forEachSuspend(consumer: suspend (T) ->
 /**
  * Wrap this [ChannelReceiver] into a coroutine [ReceiveChannel].
  * */
-fun <T : Any> ChannelReceiver<T>.toCoroutineReceiver(
+fun <T : Any> ChannelReceiver<T>.asCoroutineReceiver(
     scope: CoroutineScope = CoroutineScope(Dispatchers.Default),
 ): ReceiveChannel<T> {
     // zero-buffered channel
