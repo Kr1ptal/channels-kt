@@ -9,8 +9,8 @@ import java.util.function.Consumer
  * A [Channel] that can send / receive a single element. After the element is sent and received, the channel is closed
  * and cannot be used again.
  * */
-class OneShotChannel<T : Any> : Channel<T> {
-    private val state = AtomicReference<Any>(null)
+class OneShotChannel<T : Any> @JvmOverloads constructor(value: T? = null) : Channel<T> {
+    private val state = AtomicReference<Any>(value)
     private val notifier = ChangeNotifier()
     private var _blockingStrategy: BlockingStrategy? = null
 
