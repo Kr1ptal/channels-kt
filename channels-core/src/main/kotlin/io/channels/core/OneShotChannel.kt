@@ -9,8 +9,8 @@ import java.util.function.Consumer
  * A [Channel] that can send / receive a single element. After the element is sent and received, the channel is closed
  * and cannot be used again.
  * */
-class OneShotChannel<T : Any> : Channel<T> {
-    private val state = AtomicReference<Any>(null)
+class OneShotChannel<T : Any> @JvmOverloads constructor(value: T? = null) : Channel<T> {
+    private val state = AtomicReference<Any>(value)
     private val notifier = ChangeNotifier()
     private var _blockingStrategy: BlockingStrategy? = null
 
@@ -28,13 +28,13 @@ class OneShotChannel<T : Any> : Channel<T> {
     }
 
     override fun close() {
-        if (state.getAndSet(CLOSED) !== CLOSED) {
+        if (state.getAndSet(CONSUMED) !== CONSUMED) {
             notifier.notifyChange()
             _blockingStrategy?.signalStateChange()
         }
     }
 
-    override fun take(): T {
+    override fun take(): T? {
         while (true) {
             val ret = poll()
             if (ret != null) {
@@ -50,30 +50,26 @@ class OneShotChannel<T : Any> : Channel<T> {
             getOrInitWaitStrategy().waitForStateChange(this)
         }
 
-        throw InterruptedException("Channel is closed")
+        return null
     }
 
     @Suppress("UNCHECKED_CAST")
     override fun poll(): T? {
-        val ret = state.getAndUpdate { if (it == null) null else CLOSED }
-        return if (ret == null || ret === CLOSED) null else ret as T
+        val ret = state.getAndUpdate { if (it == null) null else CONSUMED }
+        return if (ret == null || ret === CONSUMED) null else ret as T
     }
 
     override val isClosed: Boolean
-        get() = state.get() === CLOSED
+        get() = state.get() === CONSUMED
 
     override val size: Int
         get() {
             val ret = state.get()
-            return if (ret == null || ret === CLOSED) 0 else 1
+            return if (ret == null || ret === CONSUMED) 0 else 1
         }
 
     override fun forEach(consumer: Consumer<in T>) {
-        if (isClosed) {
-            return
-        }
-
-        consumer.accept(take())
+        consumer.accept(take() ?: return)
     }
 
     private fun getOrInitWaitStrategy(): BlockingStrategy {
@@ -86,6 +82,6 @@ class OneShotChannel<T : Any> : Channel<T> {
     }
 
     companion object {
-        private val CLOSED = Any()
+        private val CONSUMED = Any()
     }
 }

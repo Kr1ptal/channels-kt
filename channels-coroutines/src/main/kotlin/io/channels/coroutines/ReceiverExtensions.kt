@@ -7,6 +7,7 @@ import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.channels.Channel.Factory.RENDEZVOUS
 import kotlinx.coroutines.channels.ReceiveChannel
 import kotlinx.coroutines.launch
+import kotlin.coroutines.CoroutineContext
 
 /**
  * Iterate over the elements of this channel, calling [consumer] for each element. The coroutine is suspended until the
@@ -43,13 +44,13 @@ suspend fun <T : Any> ChannelReceiver<T>.forEachSuspend(consumer: suspend (T) ->
 /**
  * Wrap this [ChannelReceiver] into a coroutine [ReceiveChannel].
  * */
-fun <T : Any> ChannelReceiver<T>.toCoroutineReceiver(
-    scope: CoroutineScope = CoroutineScope(Dispatchers.Default),
+fun <T : Any> ChannelReceiver<T>.asCoroutineReceiver(
+    ctx: CoroutineContext = Dispatchers.Default,
 ): ReceiveChannel<T> {
     // zero-buffered channel
     val ret = Channel<T>(RENDEZVOUS)
 
-    scope.launch {
+    CoroutineScope(ctx).launch {
         try {
             forEachSuspend(ret::send)
         } finally {

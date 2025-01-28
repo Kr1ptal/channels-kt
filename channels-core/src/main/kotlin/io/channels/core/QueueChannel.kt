@@ -43,7 +43,7 @@ class QueueChannel<T : Any>(
         }
     }
 
-    override fun take(): T {
+    override fun take(): T? {
         while (true) {
             val ret = poll()
             if (ret != null) {
@@ -58,8 +58,7 @@ class QueueChannel<T : Any>(
             // if no next element, wait until next event is available
             getOrInitWaitStrategy().waitForStateChange(this)
         }
-
-        throw InterruptedException("Channel is closed")
+        return null
     }
 
     override fun poll(): T? {
@@ -74,7 +73,7 @@ class QueueChannel<T : Any>(
 
     override fun forEach(consumer: Consumer<in T>) {
         while (true) {
-            consumer.accept(take())
+            consumer.accept(take() ?: break)
         }
     }
 

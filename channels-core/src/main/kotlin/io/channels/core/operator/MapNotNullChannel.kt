@@ -27,13 +27,14 @@ class MapNotNullChannel<T : Any, R : Any>(
         }
     }
 
-    override fun take(): R {
+    override fun take(): R? {
         while (true) {
-            val mapped = mapper.apply(parent.take())
+            val mapped = mapper.apply(parent.take() ?: break)
             if (mapped != null) {
                 return mapped
             }
         }
+        return null
     }
 
     override fun poll(): R? {
