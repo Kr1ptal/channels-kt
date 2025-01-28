@@ -162,4 +162,4 @@ class BroadcastChannelTest : FunSpec({
         elements shouldBe listOf("hello", "world")
         receiver.isClosed shouldBe true
     }
-}) 
+})
