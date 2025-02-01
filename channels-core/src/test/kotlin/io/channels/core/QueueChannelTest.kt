@@ -111,6 +111,22 @@ class QueueChannelTest : FunSpec({
         channel.isClosed shouldBe true
     }
 
+    test("for-each async processes all elements until close") {
+        val channel = QueueChannel.mpscBounded<String>(2)
+        val elements = mutableListOf<String>()
+
+        val receiver = channel.forEachAsync("test-processor") { elements.add(it) }
+
+        channel.offer("hello")
+        channel.offer("world")
+        Thread.sleep(200)
+
+        receiver.close()
+
+        elements shouldBe listOf("hello", "world")
+        channel.isClosed shouldBe true
+    }
+
     test("for-each terminates immediately if channel is closed and empty") {
         val channel = QueueChannel.mpscBounded<String>(2)
         channel.close()

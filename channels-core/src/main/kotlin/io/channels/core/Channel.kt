@@ -5,6 +5,7 @@ import io.channels.core.operator.FilterChannel
 import io.channels.core.operator.MapChannel
 import io.channels.core.operator.MapNotNullChannel
 import java.io.Closeable
+import java.util.concurrent.ThreadFactory
 import java.util.function.Consumer
 import java.util.function.Function
 import java.util.function.Predicate
@@ -57,6 +58,31 @@ interface ChannelReceiver<out T : Any> : ChannelState, Closeable {
      * until the channel is closed.
      * */
     fun forEach(consumer: Consumer<in T>)
+
+    /**
+     * Iterates over the elements of this channel, calling [consumer] for each element. This does not block the calling
+     * thread and instead iterates on a new daemon thread with optional [threadName]. If available, a virtual thread
+     * is created, falling back to platform threads.
+     * */
+    fun forEachAsync(threadName: String? = null, consumer: Consumer<in T>): ChannelReceiver<T> {
+        val thread = ThreadFactoryProvider.maybeVirtualThread { forEach(consumer) }
+
+        if (threadName != null) {
+            thread.name = threadName
+        }
+        thread.isDaemon = true
+        thread.start()
+        return this
+    }
+
+    /**
+     * Iterates over the elements of this channel, calling [consumer] for each element. This does not block the calling
+     * thread and instead iterates on a new thread, created by provided [threadFactory].
+     * */
+    fun forEachAsync(threadFactory: ThreadFactory, consumer: Consumer<in T>): ChannelReceiver<T> {
+        threadFactory.newThread { forEach(consumer) }.start()
+        return this
+    }
 
     /**
      * Remove and return the next element from the channel, blocking the calling thread until an element is available.
