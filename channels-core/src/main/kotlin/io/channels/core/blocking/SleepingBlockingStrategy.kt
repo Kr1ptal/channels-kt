@@ -13,8 +13,6 @@ import java.util.concurrent.locks.LockSupport
 class SleepingBlockingStrategy(sleepDuration: Duration) : BlockingStrategy {
     private val sleepDurationNanos = sleepDuration.toNanos()
 
-    constructor() : this(Duration.ofNanos(100))
-
     override fun waitForStateChange(status: ChannelState) {
         while (status.isEmpty) {
             LockSupport.parkNanos(sleepDurationNanos)

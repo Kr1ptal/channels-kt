@@ -18,16 +18,10 @@ class QueueChannel<T : Any>(
     private val onClose: Runnable,
 ) : Channel<T> {
     private val closed = AtomicBoolean(false)
-    private val notifier = ChangeNotifier()
     private var _blockingStrategy: BlockingStrategy? = null
-
-    override fun onStateChange(listener: Runnable) {
-        notifier.register(listener)
-    }
 
     override fun offer(element: T): Boolean {
         if (!isClosed && queue.offer(element)) {
-            notifier.notifyChange()
             _blockingStrategy?.signalStateChange()
             return true
         }
@@ -38,7 +32,6 @@ class QueueChannel<T : Any>(
     override fun close() {
         if (closed.compareAndSet(false, true)) {
             onClose.run()
-            notifier.notifyChange()
             _blockingStrategy?.signalStateChange()
         }
     }
@@ -75,6 +68,11 @@ class QueueChannel<T : Any>(
         while (true) {
             consumer.accept(take() ?: break)
         }
+    }
+
+    override fun withBlockingStrategy(blockingStrategy: BlockingStrategy): ChannelReceiver<T> {
+        this._blockingStrategy = blockingStrategy
+        return this
     }
 
     private fun getOrInitWaitStrategy(): BlockingStrategy {

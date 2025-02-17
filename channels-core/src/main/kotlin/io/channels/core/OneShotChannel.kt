@@ -11,16 +11,10 @@ import java.util.function.Consumer
  * */
 class OneShotChannel<T : Any> @JvmOverloads constructor(value: T? = null) : Channel<T> {
     private val state = AtomicReference<Any>(value)
-    private val notifier = ChangeNotifier()
     private var _blockingStrategy: BlockingStrategy? = null
-
-    override fun onStateChange(listener: Runnable) {
-        notifier.register(listener)
-    }
 
     override fun offer(element: T): Boolean {
         if (state.compareAndSet(null, element)) {
-            notifier.notifyChange()
             _blockingStrategy?.signalStateChange()
             return true
         }
@@ -29,7 +23,6 @@ class OneShotChannel<T : Any> @JvmOverloads constructor(value: T? = null) : Chan
 
     override fun close() {
         if (state.getAndSet(CONSUMED) !== CONSUMED) {
-            notifier.notifyChange()
             _blockingStrategy?.signalStateChange()
         }
     }
@@ -70,6 +63,11 @@ class OneShotChannel<T : Any> @JvmOverloads constructor(value: T? = null) : Chan
 
     override fun forEach(consumer: Consumer<in T>) {
         consumer.accept(take() ?: return)
+    }
+
+    override fun withBlockingStrategy(blockingStrategy: BlockingStrategy): ChannelReceiver<T> {
+        this._blockingStrategy = blockingStrategy
+        return this
     }
 
     private fun getOrInitWaitStrategy(): BlockingStrategy {

@@ -14,10 +14,8 @@ import kotlin.coroutines.CoroutineContext
  * next element is available or the channel is closed.
  * */
 suspend fun <T : Any> ChannelReceiver<T>.forEachSuspend(consumer: suspend (T) -> Unit) {
-    // size of 1 makes sure that even if the notification is sent between polling a null value and receiving on this
-    // channel, we will not miss the notification as it will be buffered.
-    val notifications = Channel<Unit>(1)
-    onStateChange { notifications.trySend(Unit) }
+    val blockingStrategy = CoroutineBlockingStrategy()
+    withBlockingStrategy(blockingStrategy)
 
     try {
         while (true) {
@@ -33,10 +31,10 @@ suspend fun <T : Any> ChannelReceiver<T>.forEachSuspend(consumer: suspend (T) ->
             }
 
             // if no next element, suspend until next event
-            notifications.receive()
+            blockingStrategy.notifications.receive()
         }
     } finally {
-        notifications.close()
+        blockingStrategy.notifications.close()
         close()
     }
 }

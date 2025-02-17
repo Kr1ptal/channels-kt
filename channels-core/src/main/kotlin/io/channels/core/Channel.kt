@@ -1,10 +1,15 @@
 package io.channels.core
 
 import io.channels.core.blocking.BlockingStrategy
+import io.channels.core.blocking.BusySpinBlockingStrategy
+import io.channels.core.blocking.ParkingBlockingStrategy
+import io.channels.core.blocking.SleepingBlockingStrategy
+import io.channels.core.blocking.YieldingBlockingStrategy
 import io.channels.core.operator.FilterChannel
 import io.channels.core.operator.MapChannel
 import io.channels.core.operator.MapNotNullChannel
 import java.io.Closeable
+import java.time.Duration
 import java.util.concurrent.ThreadFactory
 import java.util.function.Consumer
 import java.util.function.Function
@@ -45,14 +50,6 @@ interface ChannelSender<in T : Any> : ChannelState, Closeable {
  * undefined.
  * */
 interface ChannelReceiver<out T : Any> : ChannelState, Closeable {
-    /**
-     * Invokes [listener] **after** a new element is added to the channel or the channel is closed.
-     *
-     * NOTE: the provided [listener] should be lightweight and not perform any blocking operations. It can also be
-     * called from multiple threads.
-     * */
-    fun onStateChange(listener: Runnable)
-
     /**
      * Iterates over the elements of this channel, calling [consumer] for each element. This blocks the calling thread
      * until the channel is closed.
@@ -101,10 +98,56 @@ interface ChannelReceiver<out T : Any> : ChannelState, Closeable {
     fun poll(): T?
 
     /**
-     * Returns a [ChannelReceiver] that uses [blockingStrategy] to block until the next element is available.
+     * Replaces the current [BlockingStrategy] with provided [blockingStrategy].
      * */
-    fun withBlockingStrategy(blockingStrategy: BlockingStrategy): ChannelReceiver<T> {
-        return BlockingStrategyChannelReceiver(this, blockingStrategy)
+    fun withBlockingStrategy(blockingStrategy: BlockingStrategy): ChannelReceiver<T>
+
+    /**
+     * Replaces the current [BlockingStrategy] with [BusySpinBlockingStrategy].
+     *
+     * This strategy does not park and will use as much CPU cycles as possible, but has the lowest latency jitter.
+     * Should be used sparingly to avoid CPU starvation.
+     * */
+    fun withBusySpinBlockingStrategy(): ChannelReceiver<T> {
+        return withBlockingStrategy(BusySpinBlockingStrategy)
+    }
+
+    /**
+     * Replaces the current [BlockingStrategy] with [ParkingBlockingStrategy].
+     *
+     * Uses the fewest CPU cycles, but will lead to higher latency jitter if parked.
+     * */
+    fun withParkingBlockingStrategy(): ChannelReceiver<T> {
+        return withBlockingStrategy(ParkingBlockingStrategy())
+    }
+
+    /**
+     * Replaces the current [BlockingStrategy] with [SleepingBlockingStrategy] with sleep duration of 100 nanoseconds.
+     *
+     * This strategy can provide a good balance between latency and CPU usage.
+     * */
+    fun withSleepBlockingStrategy(): ChannelReceiver<T> {
+        return withBlockingStrategy(SleepingBlockingStrategy(Duration.ofNanos(100)))
+    }
+
+    /**
+     * Replaces the current [BlockingStrategy] with [SleepingBlockingStrategy] with provided [duration].
+     *
+     * The [duration] is used to determine how long to wait. A higher number will lead to higher latency, but use
+     * less CPU cycles, and vice versa. This strategy can provide a good balance between latency and CPU usage.
+     * */
+    fun withSleepBlockingStrategy(duration: Duration): ChannelReceiver<T> {
+        return withBlockingStrategy(SleepingBlockingStrategy(duration))
+    }
+
+    /**
+     * Replaces the current [BlockingStrategy] with [YieldingBlockingStrategy].
+     *
+     * This strategy does not park and will use as much CPU cycles as possible, but can yield the CPU to other threads
+     * if needed.
+     * */
+    fun withYieldingBlockingStrategy(): ChannelReceiver<T> {
+        return withBlockingStrategy(YieldingBlockingStrategy)
     }
 
     /**

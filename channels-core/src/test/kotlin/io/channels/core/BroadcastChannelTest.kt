@@ -1,5 +1,6 @@
 package io.channels.core
 
+import io.channels.core.blocking.BlockingStrategy
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
 import java.util.concurrent.ConcurrentLinkedQueue
@@ -136,7 +137,15 @@ class BroadcastChannelTest : FunSpec({
         val receiver = channel.subscribe()
 
         var closedCount = 0
-        receiver.onStateChange { closedCount++ }
+        receiver.withBlockingStrategy(object : BlockingStrategy {
+            override fun waitForStateChange(status: ChannelState) {
+                // do nothing
+            }
+
+            override fun signalStateChange() {
+                closedCount++
+            }
+        })
 
         repeat(3) { channel.close() }
 
