@@ -22,18 +22,6 @@ import java.util.function.Predicate
 interface Channel<T : Any> : ChannelSender<T>, ChannelReceiver<T>
 
 /**
- * A [ChannelSender] that delegates all calls to [parent]. This is useful to make the underlying [ChannelSender]
- * implementation unavailable and unmodifiable to the public.
- * */
-class DelegatingChannelSender<T : Any>(private val parent: ChannelSender<T>) : ChannelSender<T> by parent
-
-/**
- * A [ChannelReceiver] that delegates all calls to [parent]. This is useful to make the underlying [ChannelReceiver]
- * implementation unavailable and unmodifiable to the public.
- * */
-class DelegatingChannelReceiver<T : Any>(private val parent: ChannelReceiver<T>) : ChannelReceiver<T> by parent
-
-/**
  * A sender end of a channel. Same sender can possibly be used by multiple threads at the same time, but only if the
  * underlying queue supports it.
  * */

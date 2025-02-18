@@ -41,7 +41,7 @@ class BroadcastChannel<T : Any>(
 
         seqLock++
 
-        return DelegatingChannelReceiver(ret)
+        return ret
     }
 
     /**
