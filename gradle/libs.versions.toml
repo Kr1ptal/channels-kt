@@ -4,7 +4,7 @@ jacoco-tool = "0.8.11"
 junit = "5.12.2"
 kotest = "5.9.1"
 jmh = "1.37"
-ktlint-tool = "1.5.0"
+ktlint-tool = "1.6.0"
 
 [libraries]
 kotlin-bom = { module = "org.jetbrains.kotlin:kotlin-bom", version.ref = "kotlin" }
