@@ -3,8 +3,6 @@ package io.channels.core.blocking
 import io.channels.core.ChannelReceiver
 import java.time.Duration
 import java.util.function.Consumer
-import java.util.function.Function
-import java.util.function.Predicate
 
 /**
  * Wrapper that applies a specific blocking strategy to a [ChannelReceiver].
@@ -27,12 +25,12 @@ class BlockingStrategyReceiver<T : Any>(
         }
     }
 
-    // Blocking operation uses this wrapper's strategy
+    // Blocking operation uses this wrapper's wait strategy
     override fun take(): T? {
         while (true) {
             val value = delegate.poll()
             if (value != null || delegate.isClosed) return value
-            waitFunction(notificationHandle)
+            waitFunction.invoke(notificationHandle)
         }
     }
 
@@ -51,15 +49,10 @@ class BlockingStrategyReceiver<T : Any>(
 
     override fun withSleepBlockingStrategy(duration: Duration): ChannelReceiver<T> {
         val sleepNanos = duration.toNanos()
-        return BlockingStrategyReceiver(delegate, { it.waitWithSleep(sleepNanos) })
+        return BlockingStrategyReceiver(delegate) { it.waitWithSleep(sleepNanos) }
     }
 
     override fun withYieldingBlockingStrategy(): ChannelReceiver<T> {
         return BlockingStrategyReceiver(delegate, NotificationHandle::waitWithYield)
     }
-
-    // Operator methods delegate to wrapped instances
-    override fun <R : Any> map(mapper: Function<in T, R>): ChannelReceiver<R> = delegate.map(mapper)
-    override fun <R : Any> mapNotNull(mapper: Function<in T, R?>): ChannelReceiver<R> = delegate.mapNotNull(mapper)
-    override fun filter(predicate: Predicate<in T>): ChannelReceiver<T> = delegate.filter(predicate)
 }
