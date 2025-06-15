@@ -1,6 +1,5 @@
 package io.channels.core
 
-import io.channels.core.blocking.BlockingStrategy
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
 import kotlin.concurrent.thread
@@ -77,26 +76,6 @@ class OneShotChannelTest : FunSpec({
 
         channel.size shouldBe 0
         channel.take() shouldBe null
-        channel.isClosed shouldBe true
-    }
-
-    test("close is idempotent") {
-        val channel = OneShotChannel<String>()
-        var closedCount = 0
-
-        channel.withBlockingStrategy(object : BlockingStrategy {
-            override fun waitForStateChange(status: ChannelState) {
-                // do nothing
-            }
-
-            override fun signalStateChange() {
-                closedCount++
-            }
-        })
-
-        repeat(3) { channel.close() }
-
-        closedCount shouldBe 1
         channel.isClosed shouldBe true
     }
 

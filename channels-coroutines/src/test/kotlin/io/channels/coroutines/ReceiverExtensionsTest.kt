@@ -63,7 +63,7 @@ class ReceiverExtensionsTest : FunSpec({
             results shouldBe listOf("hello", "world")
         }
 
-        test("handles coroutine cancellation") {
+        test("scope cancellation also closes the channel") {
             val channel = QueueChannel.mpscUnbounded<String>()
             val results = mutableListOf<String>()
 

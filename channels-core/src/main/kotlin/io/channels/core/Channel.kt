@@ -1,10 +1,7 @@
 package io.channels.core
 
-import io.channels.core.blocking.BlockingStrategy
-import io.channels.core.blocking.BusySpinBlockingStrategy
-import io.channels.core.blocking.ParkingBlockingStrategy
-import io.channels.core.blocking.SleepingBlockingStrategy
-import io.channels.core.blocking.YieldingBlockingStrategy
+import io.channels.core.blocking.BlockingStrategyReceiver
+import io.channels.core.blocking.NotificationHandle
 import io.channels.core.operator.FilterChannel
 import io.channels.core.operator.MapChannel
 import io.channels.core.operator.MapNotNullChannel
@@ -39,6 +36,11 @@ interface ChannelSender<in T : Any> : ChannelState, Closeable {
  * */
 interface ChannelReceiver<out T : Any> : ChannelState, Closeable {
     /**
+     * Get [NotificationHandle] that is used for coordinating multiple blocking strategies.
+     * */
+    val notificationHandle: NotificationHandle
+
+    /**
      * Iterates over the elements of this channel, calling [consumer] for each element. This blocks the calling thread
      * until the channel is closed.
      * */
@@ -46,10 +48,19 @@ interface ChannelReceiver<out T : Any> : ChannelState, Closeable {
 
     /**
      * Iterates over the elements of this channel, calling [consumer] for each element. This does not block the calling
+     * thread and instead iterates on a new daemon thread. If available, a virtual thread is created, falling back
+     * to platform threads.
+     * */
+    fun forEachAsync(consumer: Consumer<in T>): ChannelReceiver<T> {
+        return forEachAsync(null, consumer)
+    }
+
+    /**
+     * Iterates over the elements of this channel, calling [consumer] for each element. This does not block the calling
      * thread and instead iterates on a new daemon thread with optional [threadName]. If available, a virtual thread
      * is created, falling back to platform threads.
      * */
-    fun forEachAsync(threadName: String? = null, consumer: Consumer<in T>): ChannelReceiver<T> {
+    fun forEachAsync(threadName: String?, consumer: Consumer<in T>): ChannelReceiver<T> {
         val thread = ThreadFactoryProvider.maybeVirtualThread { forEach(consumer) }
 
         if (threadName != null) {
@@ -86,56 +97,59 @@ interface ChannelReceiver<out T : Any> : ChannelState, Closeable {
     fun poll(): T?
 
     /**
-     * Replaces the current [BlockingStrategy] with provided [blockingStrategy].
+     * Creates a new receiver wrapper with a custom blocking strategy function.
      * */
-    fun withBlockingStrategy(blockingStrategy: BlockingStrategy): ChannelReceiver<T>
+    fun withBlockingStrategy(waitFunction: (NotificationHandle) -> Unit): ChannelReceiver<T> {
+        return BlockingStrategyReceiver(this, waitFunction)
+    }
 
     /**
-     * Replaces the current [BlockingStrategy] with [BusySpinBlockingStrategy].
+     * Creates a new receiver with busy spin blocking strategy.
      *
      * This strategy does not park and will use as much CPU cycles as possible, but has the lowest latency jitter.
      * Should be used sparingly to avoid CPU starvation.
      * */
     fun withBusySpinBlockingStrategy(): ChannelReceiver<T> {
-        return withBlockingStrategy(BusySpinBlockingStrategy)
+        return BlockingStrategyReceiver(this, NotificationHandle::waitWithBusySpin)
     }
 
     /**
-     * Replaces the current [BlockingStrategy] with [ParkingBlockingStrategy].
+     * Creates a new receiver with parking blocking strategy.
      *
      * Uses the fewest CPU cycles, but will lead to higher latency jitter if parked.
      * */
     fun withParkingBlockingStrategy(): ChannelReceiver<T> {
-        return withBlockingStrategy(ParkingBlockingStrategy())
+        return BlockingStrategyReceiver(this, NotificationHandle::waitWithParking)
     }
 
     /**
-     * Replaces the current [BlockingStrategy] with [SleepingBlockingStrategy] with sleep duration of 100 nanoseconds.
+     * Creates a new receiver with sleep blocking strategy using 100 nanoseconds sleep duration.
      *
      * This strategy can provide a good balance between latency and CPU usage.
      * */
     fun withSleepBlockingStrategy(): ChannelReceiver<T> {
-        return withBlockingStrategy(SleepingBlockingStrategy(Duration.ofNanos(100)))
+        return withSleepBlockingStrategy(Duration.ofNanos(100))
     }
 
     /**
-     * Replaces the current [BlockingStrategy] with [SleepingBlockingStrategy] with provided [duration].
+     * Creates a new receiver with sleep blocking strategy using the provided [duration].
      *
      * The [duration] is used to determine how long to wait. A higher number will lead to higher latency, but use
      * less CPU cycles, and vice versa. This strategy can provide a good balance between latency and CPU usage.
      * */
     fun withSleepBlockingStrategy(duration: Duration): ChannelReceiver<T> {
-        return withBlockingStrategy(SleepingBlockingStrategy(duration))
+        val sleepNanos = duration.toNanos()
+        return BlockingStrategyReceiver(this) { it.waitWithSleep(sleepNanos) }
     }
 
     /**
-     * Replaces the current [BlockingStrategy] with [YieldingBlockingStrategy].
+     * Creates a new receiver with yielding blocking strategy.
      *
      * This strategy does not park and will use as much CPU cycles as possible, but can yield the CPU to other threads
      * if needed.
      * */
     fun withYieldingBlockingStrategy(): ChannelReceiver<T> {
-        return withBlockingStrategy(YieldingBlockingStrategy)
+        return BlockingStrategyReceiver(this, NotificationHandle::waitWithYield)
     }
 
     /**

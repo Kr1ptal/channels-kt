@@ -1,7 +1,7 @@
 package io.channels.core.operator
 
 import io.channels.core.ChannelReceiver
-import io.channels.core.blocking.BlockingStrategy
+import io.channels.core.blocking.NotificationHandle
 import java.util.function.Consumer
 import java.util.function.Function
 
@@ -15,6 +15,9 @@ class MapNotNullChannel<T : Any, R : Any>(
     private val parent: ChannelReceiver<T>,
     private val mapper: Function<T, R?>,
 ) : ChannelReceiver<R> {
+    override val notificationHandle: NotificationHandle
+        get() = parent.notificationHandle
+
     override fun forEach(consumer: Consumer<in R>) {
         parent.forEach { next ->
             val mapped = mapper.apply(next)
@@ -46,11 +49,6 @@ class MapNotNullChannel<T : Any, R : Any>(
                 return mapped
             }
         }
-    }
-
-    override fun withBlockingStrategy(blockingStrategy: BlockingStrategy): ChannelReceiver<R> {
-        parent.withBlockingStrategy(blockingStrategy)
-        return this
     }
 
     override val isClosed: Boolean
