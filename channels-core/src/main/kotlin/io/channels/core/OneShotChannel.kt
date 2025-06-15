@@ -10,7 +10,8 @@ import java.util.function.Consumer
  * */
 class OneShotChannel<T : Any> @JvmOverloads constructor(value: T? = null) : Channel<T> {
     private val state = AtomicReference<Any>(value)
-    private var notificationHandle = NotificationHandle(this)
+
+    override val notificationHandle = NotificationHandle(this)
 
     override fun offer(element: T): Boolean {
         if (state.compareAndSet(null, element)) {

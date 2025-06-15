@@ -36,6 +36,11 @@ interface ChannelSender<in T : Any> : ChannelState, Closeable {
  * */
 interface ChannelReceiver<out T : Any> : ChannelState, Closeable {
     /**
+     * Get [NotificationHandle] that is used for coordinating multiple blocking strategies.
+     * */
+    val notificationHandle: NotificationHandle
+
+    /**
      * Iterates over the elements of this channel, calling [consumer] for each element. This blocks the calling thread
      * until the channel is closed.
      * */
@@ -43,10 +48,19 @@ interface ChannelReceiver<out T : Any> : ChannelState, Closeable {
 
     /**
      * Iterates over the elements of this channel, calling [consumer] for each element. This does not block the calling
+     * thread and instead iterates on a new daemon thread. If available, a virtual thread is created, falling back
+     * to platform threads.
+     * */
+    fun forEachAsync(consumer: Consumer<in T>): ChannelReceiver<T> {
+        return forEachAsync(null, consumer)
+    }
+
+    /**
+     * Iterates over the elements of this channel, calling [consumer] for each element. This does not block the calling
      * thread and instead iterates on a new daemon thread with optional [threadName]. If available, a virtual thread
      * is created, falling back to platform threads.
      * */
-    fun forEachAsync(threadName: String? = null, consumer: Consumer<in T>): ChannelReceiver<T> {
+    fun forEachAsync(threadName: String?, consumer: Consumer<in T>): ChannelReceiver<T> {
         val thread = ThreadFactoryProvider.maybeVirtualThread { forEach(consumer) }
 
         if (threadName != null) {
@@ -125,7 +139,7 @@ interface ChannelReceiver<out T : Any> : ChannelState, Closeable {
      * */
     fun withSleepBlockingStrategy(duration: Duration): ChannelReceiver<T> {
         val sleepNanos = duration.toNanos()
-        return BlockingStrategyReceiver(this, { it.waitWithSleep(sleepNanos) })
+        return BlockingStrategyReceiver(this) { it.waitWithSleep(sleepNanos) }
     }
 
     /**

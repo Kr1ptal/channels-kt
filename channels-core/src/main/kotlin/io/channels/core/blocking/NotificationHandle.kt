@@ -1,6 +1,7 @@
 package io.channels.core.blocking
 
 import io.channels.core.ChannelState
+import java.util.concurrent.CopyOnWriteArrayList
 import java.util.concurrent.atomic.AtomicInteger
 import java.util.concurrent.locks.ReentrantLock
 import kotlin.concurrent.withLock
@@ -8,14 +9,12 @@ import kotlin.concurrent.withLock
 /**
  * Highly optimized notification handle for coordinating multiple blocking strategies.
  *
- * Key optimizations:
+ * Handle is designed to support:
  * - Lock-free fast path for spinning strategies
  * - Consolidated lock for parking strategies to minimize contention
- * - Efficient registration/deregistration
- * - Memory-efficient storage for active waiters
+ * - Callback support for custom notification strategies (e.g., coroutines)
  */
 class NotificationHandle(val channelState: ChannelState) {
-
     // Fast path: atomic counter for spinning strategies
     private val stateVersion = AtomicInteger(0)
 
@@ -23,6 +22,10 @@ class NotificationHandle(val channelState: ChannelState) {
     private val parkingLock = ReentrantLock()
     private val parkingCondition = parkingLock.newCondition()
     private val parkingWaiters = AtomicInteger(0)
+
+    // Callback support for custom strategies - we use copy-on-write list because there will be
+    // many more reads than writes in a normal scenario.
+    private val callbacks = CopyOnWriteArrayList<() -> Unit>()
 
     /**
      * Signal that new data is available - called by sender.
@@ -36,6 +39,20 @@ class NotificationHandle(val channelState: ChannelState) {
         if (parkingWaiters.get() > 0) {
             parkingLock.withLock { parkingCondition.signalAll() }
         }
+
+        // Notify any registered callbacks (e.g., for coroutines)
+        for (i in callbacks.indices) {
+            callbacks[i].invoke()
+        }
+    }
+
+    /**
+     * Register a callback to be invoked when data becomes available.
+     * Returns a handle that can be used to unregister the callback.
+     */
+    fun onDataAvailableCallback(callback: () -> Unit): CallbackHandle {
+        callbacks.add(callback)
+        return CallbackHandle { callbacks.remove(callback) }
     }
 
     /**
@@ -91,5 +108,15 @@ class NotificationHandle(val channelState: ChannelState) {
                 break
             }
         }
+    }
+
+    /**
+     * Handle for managing callback registration/deregistration.
+     */
+    fun interface CallbackHandle {
+        /**
+         * Unregister the callback.
+         */
+        fun unregister()
     }
 }

@@ -17,7 +17,8 @@ class QueueChannel<T : Any> @JvmOverloads constructor(
     private val onClose: Runnable = Runnable {},
 ) : Channel<T> {
     private val closed = AtomicBoolean(false)
-    private val notificationHandle = NotificationHandle(this)
+
+    override val notificationHandle = NotificationHandle(this)
 
     override fun offer(element: T): Boolean {
         if (!isClosed && queue.offer(element)) {

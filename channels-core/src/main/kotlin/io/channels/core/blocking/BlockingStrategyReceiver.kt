@@ -2,7 +2,6 @@ package io.channels.core.blocking
 
 import io.channels.core.ChannelReceiver
 import java.time.Duration
-import java.util.concurrent.ThreadFactory
 import java.util.function.Consumer
 import java.util.function.Function
 import java.util.function.Predicate
@@ -14,17 +13,19 @@ import java.util.function.Predicate
 class BlockingStrategyReceiver<T : Any>(
     private val delegate: ChannelReceiver<T>,
     private val waitFunction: (NotificationHandle) -> Unit,
-    private val notificationHandle: NotificationHandle = NotificationHandle(delegate),
 ) : ChannelReceiver<T> {
-
     // Delegate all non-blocking operations
+    override val notificationHandle: NotificationHandle get() = delegate.notificationHandle
     override val isClosed: Boolean get() = delegate.isClosed
     override val size: Int get() = delegate.size
     override fun poll(): T? = delegate.poll()
     override fun close() = delegate.close()
-    override fun forEach(consumer: Consumer<in T>) = delegate.forEach(consumer)
-    override fun forEachAsync(threadName: String?, consumer: Consumer<in T>): ChannelReceiver<T> = delegate.forEachAsync(threadName, consumer)
-    override fun forEachAsync(threadFactory: ThreadFactory, consumer: Consumer<in T>): ChannelReceiver<T> = delegate.forEachAsync(threadFactory, consumer)
+
+    override fun forEach(consumer: Consumer<in T>) {
+        while (true) {
+            consumer.accept(take() ?: break)
+        }
+    }
 
     // Blocking operation uses this wrapper's strategy
     override fun take(): T? {
@@ -37,11 +38,11 @@ class BlockingStrategyReceiver<T : Any>(
 
     // Strategy methods - create new wrappers with different wait functions
     override fun withBusySpinBlockingStrategy(): ChannelReceiver<T> {
-        return BlockingStrategyReceiver(delegate, NotificationHandle::waitWithBusySpin, notificationHandle)
+        return BlockingStrategyReceiver(delegate, NotificationHandle::waitWithBusySpin)
     }
 
     override fun withParkingBlockingStrategy(): ChannelReceiver<T> {
-        return BlockingStrategyReceiver(delegate, NotificationHandle::waitWithParking, notificationHandle)
+        return BlockingStrategyReceiver(delegate, NotificationHandle::waitWithParking)
     }
 
     override fun withSleepBlockingStrategy(): ChannelReceiver<T> {
@@ -50,11 +51,11 @@ class BlockingStrategyReceiver<T : Any>(
 
     override fun withSleepBlockingStrategy(duration: Duration): ChannelReceiver<T> {
         val sleepNanos = duration.toNanos()
-        return BlockingStrategyReceiver(delegate, { it.waitWithSleep(sleepNanos) }, notificationHandle)
+        return BlockingStrategyReceiver(delegate, { it.waitWithSleep(sleepNanos) })
     }
 
     override fun withYieldingBlockingStrategy(): ChannelReceiver<T> {
-        return BlockingStrategyReceiver(delegate, NotificationHandle::waitWithYield, notificationHandle)
+        return BlockingStrategyReceiver(delegate, NotificationHandle::waitWithYield)
     }
 
     // Operator methods delegate to wrapped instances
