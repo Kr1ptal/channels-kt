@@ -1,7 +1,6 @@
 package io.channels.core
 
-import io.channels.core.blocking.BlockingStrategy
-import io.channels.core.blocking.ParkingBlockingStrategy
+import io.channels.core.blocking.NotificationHandle
 import java.util.concurrent.atomic.AtomicReference
 import java.util.function.Consumer
 
@@ -11,11 +10,11 @@ import java.util.function.Consumer
  * */
 class OneShotChannel<T : Any> @JvmOverloads constructor(value: T? = null) : Channel<T> {
     private val state = AtomicReference<Any>(value)
-    private var _blockingStrategy: BlockingStrategy? = null
+    private var notificationHandle = NotificationHandle(this)
 
     override fun offer(element: T): Boolean {
         if (state.compareAndSet(null, element)) {
-            _blockingStrategy?.signalStateChange()
+            notificationHandle.signalDataAvailable()
             return true
         }
         return false
@@ -23,7 +22,7 @@ class OneShotChannel<T : Any> @JvmOverloads constructor(value: T? = null) : Chan
 
     override fun close() {
         if (state.getAndSet(CONSUMED) !== CONSUMED) {
-            _blockingStrategy?.signalStateChange()
+            notificationHandle.signalDataAvailable()
         }
     }
 
@@ -40,7 +39,7 @@ class OneShotChannel<T : Any> @JvmOverloads constructor(value: T? = null) : Chan
             }
 
             // if no next element, wait until next event is available
-            getOrInitWaitStrategy().waitForStateChange(this)
+            notificationHandle.waitWithParking()
         }
 
         return null
@@ -63,20 +62,6 @@ class OneShotChannel<T : Any> @JvmOverloads constructor(value: T? = null) : Chan
 
     override fun forEach(consumer: Consumer<in T>) {
         consumer.accept(take() ?: return)
-    }
-
-    override fun withBlockingStrategy(blockingStrategy: BlockingStrategy): ChannelReceiver<T> {
-        this._blockingStrategy = blockingStrategy
-        return this
-    }
-
-    private fun getOrInitWaitStrategy(): BlockingStrategy {
-        var waitStrategy = _blockingStrategy
-        if (waitStrategy == null) {
-            waitStrategy = ParkingBlockingStrategy()
-            _blockingStrategy = waitStrategy
-        }
-        return waitStrategy
     }
 
     companion object {

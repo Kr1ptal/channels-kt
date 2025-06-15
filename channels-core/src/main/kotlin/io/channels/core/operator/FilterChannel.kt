@@ -1,7 +1,6 @@
 package io.channels.core.operator
 
 import io.channels.core.ChannelReceiver
-import io.channels.core.blocking.BlockingStrategy
 import java.util.function.Consumer
 import java.util.function.Predicate
 
@@ -43,11 +42,6 @@ class FilterChannel<T : Any>(
                 return next
             }
         }
-    }
-
-    override fun withBlockingStrategy(blockingStrategy: BlockingStrategy): ChannelReceiver<T> {
-        parent.withBlockingStrategy(blockingStrategy)
-        return this
     }
 
     override val isClosed: Boolean

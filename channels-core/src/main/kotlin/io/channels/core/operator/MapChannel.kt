@@ -1,7 +1,6 @@
 package io.channels.core.operator
 
 import io.channels.core.ChannelReceiver
-import io.channels.core.blocking.BlockingStrategy
 import java.util.function.Consumer
 import java.util.function.Function
 
@@ -29,11 +28,6 @@ class MapChannel<T : Any, R : Any>(
         }
 
         return mapper.apply(next)
-    }
-
-    override fun withBlockingStrategy(blockingStrategy: BlockingStrategy): ChannelReceiver<R> {
-        parent.withBlockingStrategy(blockingStrategy)
-        return this
     }
 
     override val isClosed: Boolean

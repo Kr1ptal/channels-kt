@@ -1,7 +1,6 @@
 package io.channels.core
 
-import io.channels.core.blocking.BlockingStrategy
-import io.channels.core.blocking.ParkingBlockingStrategy
+import io.channels.core.blocking.NotificationHandle
 import org.jctools.queues.MpscArrayQueue
 import org.jctools.queues.MpscUnboundedXaddArrayQueue
 import org.jctools.queues.SpscArrayQueue
@@ -13,16 +12,16 @@ import java.util.function.Consumer
 /**
  * A [Queue]-based [Channel].
  * */
-class QueueChannel<T : Any>(
+class QueueChannel<T : Any> @JvmOverloads constructor(
     private val queue: Queue<T>,
-    private val onClose: Runnable,
+    private val onClose: Runnable = Runnable {},
 ) : Channel<T> {
     private val closed = AtomicBoolean(false)
-    private var _blockingStrategy: BlockingStrategy? = null
+    private val notificationHandle = NotificationHandle(this)
 
     override fun offer(element: T): Boolean {
         if (!isClosed && queue.offer(element)) {
-            _blockingStrategy?.signalStateChange()
+            notificationHandle.signalDataAvailable()
             return true
         }
 
@@ -32,7 +31,7 @@ class QueueChannel<T : Any>(
     override fun close() {
         if (closed.compareAndSet(false, true)) {
             onClose.run()
-            _blockingStrategy?.signalStateChange()
+            notificationHandle.signalDataAvailable()
         }
     }
 
@@ -49,7 +48,7 @@ class QueueChannel<T : Any>(
             }
 
             // if no next element, wait until next event is available
-            getOrInitWaitStrategy().waitForStateChange(this)
+            notificationHandle.waitWithParking()
         }
         return null
     }
@@ -68,20 +67,6 @@ class QueueChannel<T : Any>(
         while (true) {
             consumer.accept(take() ?: break)
         }
-    }
-
-    override fun withBlockingStrategy(blockingStrategy: BlockingStrategy): ChannelReceiver<T> {
-        this._blockingStrategy = blockingStrategy
-        return this
-    }
-
-    private fun getOrInitWaitStrategy(): BlockingStrategy {
-        var waitStrategy = _blockingStrategy
-        if (waitStrategy == null) {
-            waitStrategy = ParkingBlockingStrategy()
-            _blockingStrategy = waitStrategy
-        }
-        return waitStrategy
     }
 
     companion object {
