@@ -28,10 +28,10 @@ class NotificationHandle(val channelState: ChannelState) {
     private val callbacks = CopyOnWriteArrayList<() -> Unit>()
 
     /**
-     * Signal that new data is available - called by sender.
-     * Optimized for minimal overhead in the common case.
+     * Signal that channel state has changed - called by sender. Optimized for minimal overhead
+     * in the common case.
      */
-    fun signalDataAvailable() {
+    fun signalStateChange() {
         // Increment version for spinning strategies (lock-free)
         stateVersion.incrementAndGet()
 
@@ -47,16 +47,16 @@ class NotificationHandle(val channelState: ChannelState) {
     }
 
     /**
-     * Register a callback to be invoked when data becomes available.
-     * Returns a handle that can be used to unregister the callback.
+     * Register a callback to be invoked when channel state changes. Returns a handle that can be
+     * used to unregister the callback.
      */
-    fun onDataAvailableCallback(callback: () -> Unit): CallbackHandle {
+    fun onStateChangeCallback(callback: () -> Unit): CallbackHandle {
         callbacks.add(callback)
         return CallbackHandle { callbacks.remove(callback) }
     }
 
     /**
-     * Wait using busy spin strategy - ultra-low latency.
+     * Wait using busy spin strategy - ultra-low latency, but very high CPU usage.
      */
     fun waitWithBusySpin() {
         val startVersion = stateVersion.get()

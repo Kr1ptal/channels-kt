@@ -22,7 +22,7 @@ class QueueChannel<T : Any> @JvmOverloads constructor(
 
     override fun offer(element: T): Boolean {
         if (!isClosed && queue.offer(element)) {
-            notificationHandle.signalDataAvailable()
+            notificationHandle.signalStateChange()
             return true
         }
 
@@ -32,7 +32,7 @@ class QueueChannel<T : Any> @JvmOverloads constructor(
     override fun close() {
         if (closed.compareAndSet(false, true)) {
             onClose.run()
-            notificationHandle.signalDataAvailable()
+            notificationHandle.signalStateChange()
         }
     }
 

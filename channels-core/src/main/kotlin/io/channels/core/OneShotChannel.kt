@@ -15,7 +15,7 @@ class OneShotChannel<T : Any> @JvmOverloads constructor(value: T? = null) : Chan
 
     override fun offer(element: T): Boolean {
         if (state.compareAndSet(null, element)) {
-            notificationHandle.signalDataAvailable()
+            notificationHandle.signalStateChange()
             return true
         }
         return false
@@ -23,7 +23,7 @@ class OneShotChannel<T : Any> @JvmOverloads constructor(value: T? = null) : Chan
 
     override fun close() {
         if (state.getAndSet(CONSUMED) !== CONSUMED) {
-            notificationHandle.signalDataAvailable()
+            notificationHandle.signalStateChange()
         }
     }
 

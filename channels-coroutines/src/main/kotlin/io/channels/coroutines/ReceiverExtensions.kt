@@ -19,7 +19,7 @@ suspend fun <T : Any> ChannelReceiver<T>.forEachSuspend(consumer: suspend (T) ->
     // size of 1 makes sure that even if the notification is sent between polling a null value and receiving on this
     // channel, we will not miss the notification as it will be buffered.
     val notifications = Channel<Unit>(1)
-    val callbackHandle = notificationHandle.onDataAvailableCallback {
+    val callbackHandle = notificationHandle.onStateChangeCallback {
         notifications.trySend(Unit)
     }
 
