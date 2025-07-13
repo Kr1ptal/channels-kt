@@ -5,7 +5,7 @@ import org.jctools.queues.MpscArrayQueue
 import org.jctools.queues.MpscUnboundedXaddArrayQueue
 import org.jctools.queues.SpscArrayQueue
 import org.jctools.queues.SpscUnboundedArrayQueue
-import java.util.*
+import java.util.Queue
 import java.util.function.Consumer
 import kotlin.concurrent.atomics.AtomicBoolean
 import kotlin.concurrent.atomics.ExperimentalAtomicApi
@@ -50,7 +50,7 @@ class QueueChannel<T : Any> @JvmOverloads constructor(
                 break
             }
 
-            // if no next element, wait until next event is available
+            // if no next element, wait until the next event is available
             notificationHandle.waitWithParking()
         }
         return null

@@ -5,11 +5,12 @@ import io.channels.core.blocking.NotificationHandle
 import io.channels.core.operator.FilterChannel
 import io.channels.core.operator.MapChannel
 import io.channels.core.operator.MapNotNullChannel
-import java.time.Duration
 import java.util.concurrent.ThreadFactory
 import java.util.function.Consumer
 import java.util.function.Function
 import java.util.function.Predicate
+import kotlin.time.DurationUnit
+import kotlin.time.toDuration
 
 /**
  * A channel that is both a sender and a receiver. A channel can possibly have multiple senders, depending on the
@@ -103,9 +104,9 @@ interface ChannelReceiver<out T : Any> : ChannelState, AutoCloseable {
     }
 
     /**
-     * Creates a new receiver with busy spin blocking strategy.
+     * Creates a new receiver with a busy spin blocking strategy.
      *
-     * This strategy does not park and will use as much CPU cycles as possible, but has the lowest latency jitter.
+     * This strategy does not park and will use as many CPU cycles as possible but has the lowest latency jitter.
      * Should be used sparingly to avoid CPU starvation.
      * */
     fun withBusySpinBlockingStrategy(): ChannelReceiver<T> {
@@ -113,7 +114,7 @@ interface ChannelReceiver<out T : Any> : ChannelState, AutoCloseable {
     }
 
     /**
-     * Creates a new receiver with parking blocking strategy.
+     * Creates a new receiver with a parking blocking strategy.
      *
      * Uses the fewest CPU cycles, but will lead to higher latency jitter if parked.
      * */
@@ -122,12 +123,12 @@ interface ChannelReceiver<out T : Any> : ChannelState, AutoCloseable {
     }
 
     /**
-     * Creates a new receiver with sleep blocking strategy using 100 nanoseconds sleep duration.
+     * Creates a new receiver with a sleep blocking strategy using 100-nanosecond sleep duration.
      *
      * This strategy can provide a good balance between latency and CPU usage.
      * */
     fun withSleepBlockingStrategy(): ChannelReceiver<T> {
-        return withSleepBlockingStrategy(Duration.ofNanos(100))
+        return withSleepBlockingStrategy(100, DurationUnit.NANOSECONDS)
     }
 
     /**
@@ -136,15 +137,15 @@ interface ChannelReceiver<out T : Any> : ChannelState, AutoCloseable {
      * The [duration] is used to determine how long to wait. A higher number will lead to higher latency, but use
      * less CPU cycles, and vice versa. This strategy can provide a good balance between latency and CPU usage.
      * */
-    fun withSleepBlockingStrategy(duration: Duration): ChannelReceiver<T> {
-        val sleepNanos = duration.toNanos()
+    fun withSleepBlockingStrategy(duration: Long, unit: DurationUnit): ChannelReceiver<T> {
+        val sleepNanos = duration.toDuration(unit).inWholeNanoseconds
         return BlockingStrategyReceiver(this) { it.waitWithSleep(sleepNanos) }
     }
 
     /**
-     * Creates a new receiver with yielding blocking strategy.
+     * Creates a new receiver with a yielding blocking strategy.
      *
-     * This strategy does not park and will use as much CPU cycles as possible, but can yield the CPU to other threads
+     * This strategy does not park and will use as many CPU cycles as possible but can yield the CPU to other threads
      * if needed.
      * */
     fun withYieldingBlockingStrategy(): ChannelReceiver<T> {
