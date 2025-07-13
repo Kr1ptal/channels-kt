@@ -5,3 +5,4 @@ plugins {
 rootProject.name = "channels-kt"
 include("channels-core")
 include("channels-coroutines")
+include("channels-bom")
