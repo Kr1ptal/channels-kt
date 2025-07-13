@@ -6,7 +6,6 @@ import io.channels.core.operator.FilterChannel
 import io.channels.core.operator.MapChannel
 import io.channels.core.operator.MapNotNullChannel
 import java.util.concurrent.ThreadFactory
-import java.util.function.Function
 import java.util.function.Predicate
 import kotlin.time.DurationUnit
 import kotlin.time.toDuration
@@ -154,13 +153,13 @@ interface ChannelReceiver<out T : Any> : ChannelState, AutoCloseable {
     /**
      * Map each element from this channel using [mapper], from type [T] to [R].
      * */
-    fun <R : Any> map(mapper: Function<in T, R>): ChannelReceiver<R> = MapChannel(this, mapper)
+    fun <R : Any> map(mapper: ChannelFunction<in T, R>): ChannelReceiver<R> = MapChannel(this, mapper)
 
     /**
      * Map each element from this channel using [mapper], from type [T] to [R]. If [mapper] returns null, the element
      * is skipped.
      * */
-    fun <R : Any> mapNotNull(mapper: Function<in T, R?>): ChannelReceiver<R> = MapNotNullChannel(this, mapper)
+    fun <R : Any> mapNotNull(mapper: ChannelFunction<in T, R?>): ChannelReceiver<R> = MapNotNullChannel(this, mapper)
 
     /**
      * Filter elements from this channel using [predicate].

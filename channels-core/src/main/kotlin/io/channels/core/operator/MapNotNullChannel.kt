@@ -1,9 +1,9 @@
 package io.channels.core.operator
 
 import io.channels.core.ChannelConsumer
+import io.channels.core.ChannelFunction
 import io.channels.core.ChannelReceiver
 import io.channels.core.blocking.NotificationHandle
-import java.util.function.Function
 
 /**
  * Map each element from [parent] using [mapper], from type [T] to [R]. If [mapper] returns null, the element is
@@ -13,7 +13,7 @@ import java.util.function.Function
  * */
 class MapNotNullChannel<T : Any, R : Any>(
     private val parent: ChannelReceiver<T>,
-    private val mapper: Function<T, R?>,
+    private val mapper: ChannelFunction<T, R?>,
 ) : ChannelReceiver<R> {
     override val notificationHandle: NotificationHandle
         get() = parent.notificationHandle
