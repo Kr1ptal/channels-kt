@@ -16,7 +16,33 @@ It also contains specialized implementations of channels, such as <b>BroadcastCh
 
 ## Usage
 
-### Queues
+## 🚀 Quickstart
+
+All releases are published to Maven Central. Changelog of each release can be found
+under [Releases](https://github.com/Kr1ptal/channels-kt/releases).
+
+It's recommended to define BOM platform dependency to ensure that all artifacts are compatible with each other.
+
+```kotlin
+// Define a maven repository where the library is published
+repositories {
+    mavenCentral()
+
+    // for snapshot versions, use the following repository
+    //maven { url = uri("https://central.sonatype.com/repository/maven-snapshots/") }
+}
+
+dependencies {
+    // Define a BOM and its version
+    implementation(platform("io.kriptal.channels:channels-bom:1.0.0"))
+
+    // Define any required artifacts without version
+    implementation("io.kriptal.channels:channels-core")
+    implementation("io.kriptal.channels:channels-coroutines")
+}
+```
+
+### Queue-based Channels
 
 ```kotlin
 val channel = QueueChannel.mpscUnbounded<Int>()
