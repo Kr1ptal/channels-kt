@@ -6,7 +6,6 @@ import io.channels.core.operator.FilterChannel
 import io.channels.core.operator.MapChannel
 import io.channels.core.operator.MapNotNullChannel
 import java.util.concurrent.ThreadFactory
-import java.util.function.Predicate
 import kotlin.time.DurationUnit
 import kotlin.time.toDuration
 
@@ -164,7 +163,7 @@ interface ChannelReceiver<out T : Any> : ChannelState, AutoCloseable {
     /**
      * Filter elements from this channel using [predicate].
      * */
-    fun filter(predicate: Predicate<in T>): ChannelReceiver<T> = FilterChannel(this, predicate)
+    fun filter(predicate: ChannelPredicate<in T>): ChannelReceiver<T> = FilterChannel(this, predicate)
 }
 
 /**

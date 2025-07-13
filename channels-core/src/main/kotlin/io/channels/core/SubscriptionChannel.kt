@@ -1,7 +1,5 @@
 package io.channels.core
 
-import java.util.function.Predicate
-
 /**
  * A channel that can be subscribed to.
  * */
@@ -30,7 +28,7 @@ interface SubscriptionChannel<T : Any> : AutoCloseable {
     /**
      * Filter elements from this channel using [predicate].
      * */
-    fun filter(predicate: Predicate<in T>): SubscriptionChannel<T> {
+    fun filter(predicate: ChannelPredicate<in T>): SubscriptionChannel<T> {
         return SubscriptionChannelOperator(this) { it.filter(predicate) }
     }
 }
