@@ -6,7 +6,6 @@ import io.channels.core.operator.FilterChannel
 import io.channels.core.operator.MapChannel
 import io.channels.core.operator.MapNotNullChannel
 import java.util.concurrent.ThreadFactory
-import java.util.function.Consumer
 import java.util.function.Function
 import java.util.function.Predicate
 import kotlin.time.DurationUnit
@@ -44,14 +43,14 @@ interface ChannelReceiver<out T : Any> : ChannelState, AutoCloseable {
      * Iterates over the elements of this channel, calling [consumer] for each element. This blocks the calling thread
      * until the channel is closed.
      * */
-    fun forEach(consumer: Consumer<in T>)
+    fun forEach(consumer: ChannelConsumer<in T>)
 
     /**
      * Iterates over the elements of this channel, calling [consumer] for each element. This does not block the calling
      * thread and instead iterates on a new daemon thread. If available, a virtual thread is created, falling back
      * to platform threads.
      * */
-    fun forEachAsync(consumer: Consumer<in T>): ChannelReceiver<T> {
+    fun forEachAsync(consumer: ChannelConsumer<in T>): ChannelReceiver<T> {
         return forEachAsync(null, consumer)
     }
 
@@ -60,7 +59,7 @@ interface ChannelReceiver<out T : Any> : ChannelState, AutoCloseable {
      * thread and instead iterates on a new daemon thread with optional [threadName]. If available, a virtual thread
      * is created, falling back to platform threads.
      * */
-    fun forEachAsync(threadName: String?, consumer: Consumer<in T>): ChannelReceiver<T> {
+    fun forEachAsync(threadName: String?, consumer: ChannelConsumer<in T>): ChannelReceiver<T> {
         val thread = ThreadFactoryProvider.maybeVirtualThread { forEach(consumer) }
 
         if (threadName != null) {
@@ -75,7 +74,7 @@ interface ChannelReceiver<out T : Any> : ChannelState, AutoCloseable {
      * Iterates over the elements of this channel, calling [consumer] for each element. This does not block the calling
      * thread and instead iterates on a new thread, created by provided [threadFactory].
      * */
-    fun forEachAsync(threadFactory: ThreadFactory, consumer: Consumer<in T>): ChannelReceiver<T> {
+    fun forEachAsync(threadFactory: ThreadFactory, consumer: ChannelConsumer<in T>): ChannelReceiver<T> {
         threadFactory.newThread { forEach(consumer) }.start()
         return this
     }

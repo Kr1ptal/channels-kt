@@ -1,7 +1,7 @@
 package io.channels.core.blocking
 
+import io.channels.core.ChannelConsumer
 import io.channels.core.ChannelReceiver
-import java.util.function.Consumer
 import kotlin.time.DurationUnit
 import kotlin.time.toDuration
 
@@ -20,7 +20,7 @@ class BlockingStrategyReceiver<T : Any>(
     override fun poll(): T? = delegate.poll()
     override fun close() = delegate.close()
 
-    override fun forEach(consumer: Consumer<in T>) {
+    override fun forEach(consumer: ChannelConsumer<in T>) {
         while (true) {
             consumer.accept(take() ?: break)
         }

@@ -1,7 +1,6 @@
 package io.channels.core
 
 import io.channels.core.blocking.NotificationHandle
-import java.util.function.Consumer
 import kotlin.concurrent.atomics.AtomicReference
 import kotlin.concurrent.atomics.ExperimentalAtomicApi
 
@@ -86,7 +85,7 @@ class OneShotChannel<T : Any> @JvmOverloads constructor(value: T? = null) : Chan
             return if (ret == null || ret === CONSUMED) 0 else 1
         }
 
-    override fun forEach(consumer: Consumer<in T>) {
+    override fun forEach(consumer: ChannelConsumer<in T>) {
         consumer.accept(take() ?: return)
     }
 

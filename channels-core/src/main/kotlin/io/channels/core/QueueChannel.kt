@@ -6,7 +6,6 @@ import org.jctools.queues.MpscUnboundedXaddArrayQueue
 import org.jctools.queues.SpscArrayQueue
 import org.jctools.queues.SpscUnboundedArrayQueue
 import java.util.Queue
-import java.util.function.Consumer
 import kotlin.concurrent.atomics.AtomicBoolean
 import kotlin.concurrent.atomics.ExperimentalAtomicApi
 
@@ -66,7 +65,7 @@ class QueueChannel<T : Any> @JvmOverloads constructor(
     override val size: Int
         get() = queue.size
 
-    override fun forEach(consumer: Consumer<in T>) {
+    override fun forEach(consumer: ChannelConsumer<in T>) {
         while (true) {
             consumer.accept(take() ?: break)
         }

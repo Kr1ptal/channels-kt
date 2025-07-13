@@ -1,8 +1,8 @@
 package io.channels.core.operator
 
+import io.channels.core.ChannelConsumer
 import io.channels.core.ChannelReceiver
 import io.channels.core.blocking.NotificationHandle
-import java.util.function.Consumer
 import java.util.function.Function
 
 /**
@@ -15,7 +15,7 @@ class MapChannel<T : Any, R : Any>(
     override val notificationHandle: NotificationHandle
         get() = parent.notificationHandle
 
-    override fun forEach(consumer: Consumer<in R>) {
+    override fun forEach(consumer: ChannelConsumer<in R>) {
         parent.forEach { next ->
             consumer.accept(mapper.apply(next))
         }
