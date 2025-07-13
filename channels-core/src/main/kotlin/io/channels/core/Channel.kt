@@ -5,12 +5,9 @@ import io.channels.core.blocking.NotificationHandle
 import io.channels.core.operator.FilterChannel
 import io.channels.core.operator.MapChannel
 import io.channels.core.operator.MapNotNullChannel
-import java.io.Closeable
-import java.time.Duration
 import java.util.concurrent.ThreadFactory
-import java.util.function.Consumer
-import java.util.function.Function
-import java.util.function.Predicate
+import kotlin.time.DurationUnit
+import kotlin.time.toDuration
 
 /**
  * A channel that is both a sender and a receiver. A channel can possibly have multiple senders, depending on the
@@ -22,7 +19,7 @@ interface Channel<T : Any> : ChannelSender<T>, ChannelReceiver<T>
  * A sender end of a channel. Same sender can possibly be used by multiple threads at the same time, but only if the
  * underlying queue supports it.
  * */
-interface ChannelSender<in T : Any> : ChannelState, Closeable {
+interface ChannelSender<in T : Any> : ChannelState, AutoCloseable {
     /**
      * Offer an element to the channel, returning true if the element was added to the channel, false otherwise. This
      * method is non-blocking.
@@ -34,7 +31,7 @@ interface ChannelSender<in T : Any> : ChannelState, Closeable {
  * A receiver end of a channel. Same instance can only be used by one thread at a time, otherwise the behavior is
  * undefined.
  * */
-interface ChannelReceiver<out T : Any> : ChannelState, Closeable {
+interface ChannelReceiver<out T : Any> : ChannelState, AutoCloseable {
     /**
      * Get [NotificationHandle] that is used for coordinating multiple blocking strategies.
      * */
@@ -44,14 +41,14 @@ interface ChannelReceiver<out T : Any> : ChannelState, Closeable {
      * Iterates over the elements of this channel, calling [consumer] for each element. This blocks the calling thread
      * until the channel is closed.
      * */
-    fun forEach(consumer: Consumer<in T>)
+    fun forEach(consumer: ChannelConsumer<in T>)
 
     /**
      * Iterates over the elements of this channel, calling [consumer] for each element. This does not block the calling
      * thread and instead iterates on a new daemon thread. If available, a virtual thread is created, falling back
      * to platform threads.
      * */
-    fun forEachAsync(consumer: Consumer<in T>): ChannelReceiver<T> {
+    fun forEachAsync(consumer: ChannelConsumer<in T>): ChannelReceiver<T> {
         return forEachAsync(null, consumer)
     }
 
@@ -60,7 +57,7 @@ interface ChannelReceiver<out T : Any> : ChannelState, Closeable {
      * thread and instead iterates on a new daemon thread with optional [threadName]. If available, a virtual thread
      * is created, falling back to platform threads.
      * */
-    fun forEachAsync(threadName: String?, consumer: Consumer<in T>): ChannelReceiver<T> {
+    fun forEachAsync(threadName: String?, consumer: ChannelConsumer<in T>): ChannelReceiver<T> {
         val thread = ThreadFactoryProvider.maybeVirtualThread { forEach(consumer) }
 
         if (threadName != null) {
@@ -75,7 +72,7 @@ interface ChannelReceiver<out T : Any> : ChannelState, Closeable {
      * Iterates over the elements of this channel, calling [consumer] for each element. This does not block the calling
      * thread and instead iterates on a new thread, created by provided [threadFactory].
      * */
-    fun forEachAsync(threadFactory: ThreadFactory, consumer: Consumer<in T>): ChannelReceiver<T> {
+    fun forEachAsync(threadFactory: ThreadFactory, consumer: ChannelConsumer<in T>): ChannelReceiver<T> {
         threadFactory.newThread { forEach(consumer) }.start()
         return this
     }
@@ -104,9 +101,9 @@ interface ChannelReceiver<out T : Any> : ChannelState, Closeable {
     }
 
     /**
-     * Creates a new receiver with busy spin blocking strategy.
+     * Creates a new receiver with a busy spin blocking strategy.
      *
-     * This strategy does not park and will use as much CPU cycles as possible, but has the lowest latency jitter.
+     * This strategy does not park and will use as many CPU cycles as possible but has the lowest latency jitter.
      * Should be used sparingly to avoid CPU starvation.
      * */
     fun withBusySpinBlockingStrategy(): ChannelReceiver<T> {
@@ -114,7 +111,7 @@ interface ChannelReceiver<out T : Any> : ChannelState, Closeable {
     }
 
     /**
-     * Creates a new receiver with parking blocking strategy.
+     * Creates a new receiver with a parking blocking strategy.
      *
      * Uses the fewest CPU cycles, but will lead to higher latency jitter if parked.
      * */
@@ -123,12 +120,12 @@ interface ChannelReceiver<out T : Any> : ChannelState, Closeable {
     }
 
     /**
-     * Creates a new receiver with sleep blocking strategy using 100 nanoseconds sleep duration.
+     * Creates a new receiver with a sleep blocking strategy using 100-nanosecond sleep duration.
      *
      * This strategy can provide a good balance between latency and CPU usage.
      * */
     fun withSleepBlockingStrategy(): ChannelReceiver<T> {
-        return withSleepBlockingStrategy(Duration.ofNanos(100))
+        return withSleepBlockingStrategy(100, DurationUnit.NANOSECONDS)
     }
 
     /**
@@ -137,15 +134,15 @@ interface ChannelReceiver<out T : Any> : ChannelState, Closeable {
      * The [duration] is used to determine how long to wait. A higher number will lead to higher latency, but use
      * less CPU cycles, and vice versa. This strategy can provide a good balance between latency and CPU usage.
      * */
-    fun withSleepBlockingStrategy(duration: Duration): ChannelReceiver<T> {
-        val sleepNanos = duration.toNanos()
+    fun withSleepBlockingStrategy(duration: Long, unit: DurationUnit): ChannelReceiver<T> {
+        val sleepNanos = duration.toDuration(unit).inWholeNanoseconds
         return BlockingStrategyReceiver(this) { it.waitWithSleep(sleepNanos) }
     }
 
     /**
-     * Creates a new receiver with yielding blocking strategy.
+     * Creates a new receiver with a yielding blocking strategy.
      *
-     * This strategy does not park and will use as much CPU cycles as possible, but can yield the CPU to other threads
+     * This strategy does not park and will use as many CPU cycles as possible but can yield the CPU to other threads
      * if needed.
      * */
     fun withYieldingBlockingStrategy(): ChannelReceiver<T> {
@@ -155,18 +152,18 @@ interface ChannelReceiver<out T : Any> : ChannelState, Closeable {
     /**
      * Map each element from this channel using [mapper], from type [T] to [R].
      * */
-    fun <R : Any> map(mapper: Function<in T, R>): ChannelReceiver<R> = MapChannel(this, mapper)
+    fun <R : Any> map(mapper: ChannelFunction<in T, R>): ChannelReceiver<R> = MapChannel(this, mapper)
 
     /**
      * Map each element from this channel using [mapper], from type [T] to [R]. If [mapper] returns null, the element
      * is skipped.
      * */
-    fun <R : Any> mapNotNull(mapper: Function<in T, R?>): ChannelReceiver<R> = MapNotNullChannel(this, mapper)
+    fun <R : Any> mapNotNull(mapper: ChannelFunction<in T, R?>): ChannelReceiver<R> = MapNotNullChannel(this, mapper)
 
     /**
      * Filter elements from this channel using [predicate].
      * */
-    fun filter(predicate: Predicate<in T>): ChannelReceiver<T> = FilterChannel(this, predicate)
+    fun filter(predicate: ChannelPredicate<in T>): ChannelReceiver<T> = FilterChannel(this, predicate)
 }
 
 /**

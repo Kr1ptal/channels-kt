@@ -2,17 +2,19 @@ package io.channels.core
 
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.CopyOnWriteArrayList
-import java.util.concurrent.atomic.AtomicBoolean
-import java.util.concurrent.atomic.AtomicInteger
-import java.util.function.Function
+import kotlin.concurrent.atomics.AtomicBoolean
+import kotlin.concurrent.atomics.AtomicInt
+import kotlin.concurrent.atomics.ExperimentalAtomicApi
+import kotlin.concurrent.atomics.fetchAndIncrement
 
 /**
  * A [SubscriptionChannel] that supports multiple subscribers and sends (broadcasts) elements to all subscribers.
  * */
+@OptIn(ExperimentalAtomicApi::class)
 class BroadcastChannel<T : Any>(
-    private val channelFactory: Function<Runnable, Channel<T>>,
+    private val channelFactory: ChannelFactory<T>,
 ) : ChannelSender<T>, SubscriptionChannel<T> {
-    private val id = AtomicInteger(0)
+    private val id = AtomicInt(0)
     private val idToSubscription = ConcurrentHashMap<Int, Channel<T>>()
     private val subscriptions = CopyOnWriteArrayList<Channel<T>>()
     private val closed = AtomicBoolean(false)
@@ -23,15 +25,15 @@ class BroadcastChannel<T : Any>(
     override fun subscribe(): ChannelReceiver<T> {
         seqLock++
 
-        val id = id.getAndIncrement()
+        val id = id.fetchAndIncrement()
         val onClose = unsub@{
             val sub = idToSubscription.remove(id) ?: return@unsub
             subscriptions.remove(sub)
         }
 
-        val ret = channelFactory.apply(onClose)
+        val ret = channelFactory.newChannel(onClose)
 
-        // if broadcast channel is closed, close the receiver as well
+        // if the broadcast channel is closed, close the receiver as well
         if (isClosed) {
             ret.close()
         } else {
@@ -88,13 +90,20 @@ class BroadcastChannel<T : Any>(
     }
 
     override val isClosed: Boolean
-        get() = closed.get()
+        get() = closed.load()
 
     /**
      * Current number of subscribers.
      * */
     override val size: Int
         get() = subscriptions.size
+
+    /**
+     * Factory for creating [io.channels.core.BroadcastChannel]'s subscription channels.
+     * */
+    fun interface ChannelFactory<T : Any> {
+        fun newChannel(onClose: () -> Unit): Channel<T>
+    }
 
     companion object {
         /**

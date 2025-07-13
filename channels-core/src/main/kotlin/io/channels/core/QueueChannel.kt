@@ -5,13 +5,14 @@ import org.jctools.queues.MpscArrayQueue
 import org.jctools.queues.MpscUnboundedXaddArrayQueue
 import org.jctools.queues.SpscArrayQueue
 import org.jctools.queues.SpscUnboundedArrayQueue
-import java.util.*
-import java.util.concurrent.atomic.AtomicBoolean
-import java.util.function.Consumer
+import java.util.Queue
+import kotlin.concurrent.atomics.AtomicBoolean
+import kotlin.concurrent.atomics.ExperimentalAtomicApi
 
 /**
  * A [Queue]-based [Channel].
  * */
+@OptIn(ExperimentalAtomicApi::class)
 class QueueChannel<T : Any> @JvmOverloads constructor(
     private val queue: Queue<T>,
     private val onClose: Runnable = Runnable {},
@@ -30,7 +31,7 @@ class QueueChannel<T : Any> @JvmOverloads constructor(
     }
 
     override fun close() {
-        if (closed.compareAndSet(false, true)) {
+        if (closed.compareAndSet(expectedValue = false, newValue = true)) {
             onClose.run()
             notificationHandle.signalStateChange()
         }
@@ -48,7 +49,7 @@ class QueueChannel<T : Any> @JvmOverloads constructor(
                 break
             }
 
-            // if no next element, wait until next event is available
+            // if no next element, wait until the next event is available
             notificationHandle.waitWithParking()
         }
         return null
@@ -59,12 +60,12 @@ class QueueChannel<T : Any> @JvmOverloads constructor(
     }
 
     override val isClosed: Boolean
-        get() = closed.get()
+        get() = closed.load()
 
     override val size: Int
         get() = queue.size
 
-    override fun forEach(consumer: Consumer<in T>) {
+    override fun forEach(consumer: ChannelConsumer<in T>) {
         while (true) {
             consumer.accept(take() ?: break)
         }

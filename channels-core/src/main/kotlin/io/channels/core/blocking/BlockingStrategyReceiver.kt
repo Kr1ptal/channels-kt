@@ -1,8 +1,9 @@
 package io.channels.core.blocking
 
+import io.channels.core.ChannelConsumer
 import io.channels.core.ChannelReceiver
-import java.time.Duration
-import java.util.function.Consumer
+import kotlin.time.DurationUnit
+import kotlin.time.toDuration
 
 /**
  * Wrapper that applies a specific blocking strategy to a [ChannelReceiver].
@@ -19,7 +20,7 @@ class BlockingStrategyReceiver<T : Any>(
     override fun poll(): T? = delegate.poll()
     override fun close() = delegate.close()
 
-    override fun forEach(consumer: Consumer<in T>) {
+    override fun forEach(consumer: ChannelConsumer<in T>) {
         while (true) {
             consumer.accept(take() ?: break)
         }
@@ -44,11 +45,11 @@ class BlockingStrategyReceiver<T : Any>(
     }
 
     override fun withSleepBlockingStrategy(): ChannelReceiver<T> {
-        return withSleepBlockingStrategy(Duration.ofNanos(100))
+        return withSleepBlockingStrategy(100, DurationUnit.NANOSECONDS)
     }
 
-    override fun withSleepBlockingStrategy(duration: Duration): ChannelReceiver<T> {
-        val sleepNanos = duration.toNanos()
+    override fun withSleepBlockingStrategy(duration: Long, unit: DurationUnit): ChannelReceiver<T> {
+        val sleepNanos = duration.toDuration(unit).inWholeNanoseconds
         return BlockingStrategyReceiver(delegate) { it.waitWithSleep(sleepNanos) }
     }
 

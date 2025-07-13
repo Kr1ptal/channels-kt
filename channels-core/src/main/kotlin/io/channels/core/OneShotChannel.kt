@@ -1,15 +1,16 @@
 package io.channels.core
 
 import io.channels.core.blocking.NotificationHandle
-import java.util.concurrent.atomic.AtomicReference
-import java.util.function.Consumer
+import kotlin.concurrent.atomics.AtomicReference
+import kotlin.concurrent.atomics.ExperimentalAtomicApi
 
 /**
  * A [Channel] that can send / receive a single element. After the element is sent and received, the channel is closed
  * and cannot be used again.
  * */
+@OptIn(ExperimentalAtomicApi::class)
 class OneShotChannel<T : Any> @JvmOverloads constructor(value: T? = null) : Channel<T> {
-    private val state = AtomicReference<Any>(value)
+    private val state = AtomicReference<Any?>(value)
 
     override val notificationHandle = NotificationHandle(this)
 
@@ -22,7 +23,7 @@ class OneShotChannel<T : Any> @JvmOverloads constructor(value: T? = null) : Chan
     }
 
     override fun close() {
-        if (state.getAndSet(CONSUMED) !== CONSUMED) {
+        if (state.exchange(CONSUMED) !== CONSUMED) {
             notificationHandle.signalStateChange()
         }
     }
@@ -52,16 +53,39 @@ class OneShotChannel<T : Any> @JvmOverloads constructor(value: T? = null) : Chan
         return if (ret == null || ret === CONSUMED) null else ret as T
     }
 
+    /**
+     * Atomically updates the current value with the results of applying the given [update] function,
+     * returning the previous value.
+     */
+    private fun <T> AtomicReference<T?>.getAndUpdate(update: (T?) -> T?): T? {
+        var prev: T? = this.load()
+        var next: T? = null
+        var haveNext = false
+        while (true) {
+            if (!haveNext) {
+                next = update(prev)
+            }
+
+            if (this.compareAndSet(prev, next)) {
+                return prev
+            }
+
+            val stored = this.load()
+            haveNext = prev == stored
+            prev = stored
+        }
+    }
+
     override val isClosed: Boolean
-        get() = state.get() === CONSUMED
+        get() = state.load() === CONSUMED
 
     override val size: Int
         get() {
-            val ret = state.get()
+            val ret = state.load()
             return if (ret == null || ret === CONSUMED) 0 else 1
         }
 
-    override fun forEach(consumer: Consumer<in T>) {
+    override fun forEach(consumer: ChannelConsumer<in T>) {
         consumer.accept(take() ?: return)
     }
 

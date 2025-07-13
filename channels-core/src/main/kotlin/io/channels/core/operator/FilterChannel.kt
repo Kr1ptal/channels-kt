@@ -1,9 +1,9 @@
 package io.channels.core.operator
 
+import io.channels.core.ChannelConsumer
+import io.channels.core.ChannelPredicate
 import io.channels.core.ChannelReceiver
 import io.channels.core.blocking.NotificationHandle
-import java.util.function.Consumer
-import java.util.function.Predicate
 
 /**
  * Filter elements from [parent] using [predicate].
@@ -12,12 +12,12 @@ import java.util.function.Predicate
  * */
 class FilterChannel<T : Any>(
     private val parent: ChannelReceiver<T>,
-    private val predicate: Predicate<in T>,
+    private val predicate: ChannelPredicate<in T>,
 ) : ChannelReceiver<T> {
     override val notificationHandle: NotificationHandle
         get() = parent.notificationHandle
 
-    override fun forEach(consumer: Consumer<in T>) {
+    override fun forEach(consumer: ChannelConsumer<in T>) {
         parent.forEach { next ->
             if (predicate.test(next)) {
                 consumer.accept(next)
