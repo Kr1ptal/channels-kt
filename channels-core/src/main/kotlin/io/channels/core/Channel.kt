@@ -5,7 +5,6 @@ import io.channels.core.blocking.NotificationHandle
 import io.channels.core.operator.FilterChannel
 import io.channels.core.operator.MapChannel
 import io.channels.core.operator.MapNotNullChannel
-import java.io.Closeable
 import java.time.Duration
 import java.util.concurrent.ThreadFactory
 import java.util.function.Consumer
@@ -22,7 +21,7 @@ interface Channel<T : Any> : ChannelSender<T>, ChannelReceiver<T>
  * A sender end of a channel. Same sender can possibly be used by multiple threads at the same time, but only if the
  * underlying queue supports it.
  * */
-interface ChannelSender<in T : Any> : ChannelState, Closeable {
+interface ChannelSender<in T : Any> : ChannelState, AutoCloseable {
     /**
      * Offer an element to the channel, returning true if the element was added to the channel, false otherwise. This
      * method is non-blocking.
@@ -34,7 +33,7 @@ interface ChannelSender<in T : Any> : ChannelState, Closeable {
  * A receiver end of a channel. Same instance can only be used by one thread at a time, otherwise the behavior is
  * undefined.
  * */
-interface ChannelReceiver<out T : Any> : ChannelState, Closeable {
+interface ChannelReceiver<out T : Any> : ChannelState, AutoCloseable {
     /**
      * Get [NotificationHandle] that is used for coordinating multiple blocking strategies.
      * */
