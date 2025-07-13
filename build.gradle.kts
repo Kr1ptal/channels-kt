@@ -53,7 +53,7 @@ jreleaser {
 
     // Set project info for deployment
     project {
-        description.set("Async, high-performance Kotlin library for interacting with EVM-based blockchains. Targeting JVM and Android platforms.")
+        description.set("High-performance Channel abstraction for Kotlin and JVM.")
         links {
             homepage.set("https://github.com/Kr1ptal/channels-kt")
         }
