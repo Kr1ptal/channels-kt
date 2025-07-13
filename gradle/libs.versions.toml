@@ -43,3 +43,4 @@ kotest = ["kotest-junit5", "kotest-assertions", "kotest-property", "kotest-frame
 
 [plugins]
 kotlin-jvm = { id = "org.jetbrains.kotlin.jvm", version.ref = "kotlin" }
+jreleaser = { id = "org.jreleaser", version = "1.19.0" }
