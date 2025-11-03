@@ -3,18 +3,27 @@ project.pluginManager.withPlugin("java") {
     val javaToolchainService = the<JavaToolchainService>()
 
     extension.toolchain {
-        languageVersion.set(JavaLanguageVersion.of(11))
-        vendor.set(JvmVendorSpec.ADOPTIUM)
-        implementation.set(JvmImplementation.VENDOR_SPECIFIC)
+        languageVersion = JavaLanguageVersion.of(17)
+        vendor = JvmVendorSpec.ADOPTIUM
+        implementation = JvmImplementation.VENDOR_SPECIFIC
     }
 
+    extension.targetCompatibility = Constants.compileJavaVersion
+    extension.sourceCompatibility = Constants.compileJavaVersion
+
     tasks.withType<JavaExec>().all {
-        javaLauncher.set(javaToolchainService.launcherFor(extension.toolchain))
+        javaLauncher = javaToolchainService.launcherFor(extension.toolchain)
     }
 
     tasks.withType<Test>().all {
-        javaLauncher.set(javaToolchainService.launcherFor(extension.toolchain))
+        javaLauncher = javaToolchainService.launcherFor(extension.toolchain)
     }
+
+    tasks.withType<JavaCompile>().matching { it.name.contains("Test") }.all {
+        targetCompatibility = Constants.testJavaVersion.majorVersion
+        sourceCompatibility = Constants.testJavaVersion.majorVersion
+    }
+
 
     // temp fix: https://youtrack.jetbrains.com/issue/IDEA-316081/Gradle-8-toolchain-error-Toolchain-from-executable-property-does-not-match-toolchain-from-javaLauncher-property-when-different#focus=Comments-27-7276479.0-0
     gradle.taskGraph.whenReady {
