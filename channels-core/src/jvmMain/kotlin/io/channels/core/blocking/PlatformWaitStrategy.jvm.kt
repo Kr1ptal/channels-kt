@@ -3,7 +3,7 @@ package io.channels.core.blocking
 /**
  * JVM implementation of platform-specific wait strategies.
  */
-actual object PlatformWaitStrategy {
+internal actual object PlatformWaitStrategy {
     /**
      * Hint to the JVM that the current thread is in a spin-wait loop.
      * Uses Thread.onSpinWait() if available (Java 9+), otherwise does nothing.

@@ -11,7 +11,7 @@ import kotlinx.atomicfu.update
  * Highly optimized notification handle for coordinating multiple blocking strategies.
  *
  * Handle is designed to support:
- * - Lock-free fast path for spinning strategies
+ * - Lock-free fast-path for spinning strategies
  * - Consolidated lock for parking strategies to minimize contention
  * - Callback support for custom notification strategies (e.g., coroutines)
  */

@@ -4,7 +4,7 @@ package io.channels.core.blocking
  * Platform-specific wait strategies for blocking operations.
  * Each platform provides optimal implementations for these primitives.
  */
-expect object PlatformWaitStrategy {
+internal expect object PlatformWaitStrategy {
     /**
      * Hint to the platform that the current thread is in a spin-wait loop.
      * On JVM, this may use Thread.onSpinWait() for better CPU utilization.
