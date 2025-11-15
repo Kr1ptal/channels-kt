@@ -3,7 +3,6 @@ import org.jreleaser.model.Active
 plugins {
     `project-conventions`
     `jacoco-report-aggregation`
-    id("test-report-aggregation")
     alias(libs.plugins.jreleaser)
 }
 
@@ -16,7 +15,6 @@ dependencies {
 
     releasedSubmodules.forEach {
         jacocoAggregation(project(it))
-        testReportAggregation(project(it))
     }
 }
 
@@ -25,8 +23,13 @@ dependencies {
     finalizedBy(tasks.named<JacocoReport>("testCodeCoverageReport"))
 }*/
 
+// KMP modules already provide allTests task
+tasks.named("allTests") {
+    dependsOn(":channels-core:allTests", ":channels-coroutines:allTests")
+}
+
 tasks.check {
-    dependsOn(tasks.named<TestReport>("testAggregateTestReport"))
+    dependsOn(tasks.named("allTests"))
 }
 
 allprojects {

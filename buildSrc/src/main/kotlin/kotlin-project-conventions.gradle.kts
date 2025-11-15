@@ -45,7 +45,8 @@ pluginManager.withPlugin("org.jetbrains.kotlin.multiplatform") {
     configure<KotlinMultiplatformExtension> {
         // Define standard targets
         jvm()
-        iosArm64()
+        // TODO: Re-enable once native source code is added
+        // iosArm64()
 
         jvmToolchain(Constants.testJavaVersion.majorVersion.toInt())
 

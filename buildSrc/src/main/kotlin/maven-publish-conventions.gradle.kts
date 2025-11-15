@@ -42,23 +42,6 @@ val configurePom = Action<MavenPom> {
     }
 }
 
-project.pluginManager.withPlugin("java") {
-    val extJava = project.extensions.getByType(JavaPluginExtension::class.java)
-    extJava.withJavadocJar()
-    extJava.withSourcesJar()
-
-    publishing {
-        publications {
-            create<MavenPublication>("library") {
-                pom(configurePom)
-                from(components["java"])
-            }
-        }
-
-        repositories(configureMavenCentralRepo)
-    }
-}
-
 project.pluginManager.withPlugin("java-platform") {
     publishing {
         publications {
@@ -69,5 +52,15 @@ project.pluginManager.withPlugin("java-platform") {
         }
 
         repositories(configureMavenCentralRepo)
+    }
+}
+
+project.pluginManager.withPlugin("org.jetbrains.kotlin.multiplatform") {
+    publishing {
+        repositories(configureMavenCentralRepo)
+
+        publications.withType<MavenPublication> {
+            pom(configurePom)
+        }
     }
 }
