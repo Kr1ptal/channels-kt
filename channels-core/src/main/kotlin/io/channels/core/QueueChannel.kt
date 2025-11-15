@@ -1,23 +1,21 @@
 package io.channels.core
 
 import io.channels.core.blocking.NotificationHandle
+import kotlinx.atomicfu.atomic
 import org.jctools.queues.MpscArrayQueue
 import org.jctools.queues.MpscUnboundedXaddArrayQueue
 import org.jctools.queues.SpscArrayQueue
 import org.jctools.queues.SpscUnboundedArrayQueue
 import java.util.Queue
-import kotlin.concurrent.atomics.AtomicBoolean
-import kotlin.concurrent.atomics.ExperimentalAtomicApi
 
 /**
  * A [Queue]-based [Channel].
  * */
-@OptIn(ExperimentalAtomicApi::class)
 class QueueChannel<T : Any> @JvmOverloads constructor(
     private val queue: Queue<T>,
     private val onClose: Runnable = Runnable {},
 ) : Channel<T> {
-    private val closed = AtomicBoolean(false)
+    private val closed = atomic(false)
 
     override val notificationHandle = NotificationHandle(this)
 
@@ -31,7 +29,7 @@ class QueueChannel<T : Any> @JvmOverloads constructor(
     }
 
     override fun close() {
-        if (closed.compareAndSet(expectedValue = false, newValue = true)) {
+        if (closed.compareAndSet(false, true)) {
             onClose.run()
             notificationHandle.signalStateChange()
         }
@@ -60,7 +58,7 @@ class QueueChannel<T : Any> @JvmOverloads constructor(
     }
 
     override val isClosed: Boolean
-        get() = closed.load()
+        get() = closed.value
 
     override val size: Int
         get() = queue.size

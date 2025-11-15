@@ -1,16 +1,14 @@
 package io.channels.core
 
 import io.channels.core.blocking.NotificationHandle
-import kotlin.concurrent.atomics.AtomicReference
-import kotlin.concurrent.atomics.ExperimentalAtomicApi
+import kotlinx.atomicfu.atomic
 
 /**
  * A [Channel] that can send / receive a single element. After the element is sent and received, the channel is closed
  * and cannot be used again.
  * */
-@OptIn(ExperimentalAtomicApi::class)
 class OneShotChannel<T : Any> @JvmOverloads constructor(value: T? = null) : Channel<T> {
-    private val state = AtomicReference<Any?>(value)
+    private val state = atomic<Any?>(value)
 
     override val notificationHandle = NotificationHandle(this)
 
@@ -23,7 +21,7 @@ class OneShotChannel<T : Any> @JvmOverloads constructor(value: T? = null) : Chan
     }
 
     override fun close() {
-        if (state.exchange(CONSUMED) !== CONSUMED) {
+        if (state.getAndSet(CONSUMED) !== CONSUMED) {
             notificationHandle.signalStateChange()
         }
     }
@@ -49,39 +47,23 @@ class OneShotChannel<T : Any> @JvmOverloads constructor(value: T? = null) : Chan
 
     @Suppress("UNCHECKED_CAST")
     override fun poll(): T? {
-        val ret = state.getAndUpdate { if (it == null) null else CONSUMED }
-        return if (ret == null || ret === CONSUMED) null else ret as T
-    }
-
-    /**
-     * Atomically updates the current value with the results of applying the given [update] function,
-     * returning the previous value.
-     */
-    private fun <T> AtomicReference<T?>.getAndUpdate(update: (T?) -> T?): T? {
-        var prev: T? = this.load()
-        var next: T? = null
-        var haveNext = false
         while (true) {
-            if (!haveNext) {
-                next = update(prev)
+            val current = state.value
+            if (current == null || current === CONSUMED) {
+                return null
             }
-
-            if (this.compareAndSet(prev, next)) {
-                return prev
+            if (state.compareAndSet(current, CONSUMED)) {
+                return current as T
             }
-
-            val stored = this.load()
-            haveNext = prev == stored
-            prev = stored
         }
     }
 
     override val isClosed: Boolean
-        get() = state.load() === CONSUMED
+        get() = state.value === CONSUMED
 
     override val size: Int
         get() {
-            val ret = state.load()
+            val ret = state.value
             return if (ret == null || ret === CONSUMED) 0 else 1
         }
 
