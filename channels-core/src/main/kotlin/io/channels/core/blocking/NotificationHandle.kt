@@ -1,13 +1,11 @@
 package io.channels.core.blocking
 
 import io.channels.core.ChannelState
-import java.util.concurrent.CopyOnWriteArrayList
-import java.util.concurrent.locks.ReentrantLock
-import kotlin.concurrent.atomics.AtomicInt
-import kotlin.concurrent.atomics.ExperimentalAtomicApi
-import kotlin.concurrent.atomics.decrementAndFetch
-import kotlin.concurrent.atomics.incrementAndFetch
-import kotlin.concurrent.withLock
+import kotlinx.atomicfu.AtomicRef
+import kotlinx.atomicfu.atomic
+import kotlinx.atomicfu.locks.reentrantLock
+import kotlinx.atomicfu.locks.withLock
+import kotlinx.atomicfu.update
 
 /**
  * Highly optimized notification handle for coordinating multiple blocking strategies.
@@ -17,19 +15,18 @@ import kotlin.concurrent.withLock
  * - Consolidated lock for parking strategies to minimize contention
  * - Callback support for custom notification strategies (e.g., coroutines)
  */
-@OptIn(ExperimentalAtomicApi::class)
 class NotificationHandle(val channelState: ChannelState) {
     // Fast path: atomic counter for spinning strategies
-    private val stateVersion = AtomicInt(0)
+    private val stateVersion = atomic(0)
 
     // Slow path: consolidated parking for blocking strategies
-    private val parkingLock = ReentrantLock()
+    private val parkingLock = reentrantLock()
     private val parkingCondition = parkingLock.newCondition()
-    private val parkingWaiters = AtomicInt(0)
+    private val parkingWaiters = atomic(0)
 
-    // Callback support for custom strategies - we use copy-on-write list because there will be
-    // many more reads than writes in a normal scenario.
-    private val callbacks = CopyOnWriteArrayList<() -> Unit>()
+    // Callback support for custom strategies - we use atomic reference with an immutable list because
+    // there will be many more reads than writes in a normal scenario.
+    private val callbacks: AtomicRef<List<() -> Unit>> = atomic(emptyList())
 
     /**
      * Signal that channel state has changed - called by sender. Optimized for minimal overhead
@@ -37,16 +34,16 @@ class NotificationHandle(val channelState: ChannelState) {
      */
     fun signalStateChange() {
         // Increment version for spinning strategies (lock-free)
-        stateVersion.incrementAndFetch()
+        stateVersion.incrementAndGet()
 
         // Wake up parking strategies only if there are waiters
-        if (parkingWaiters.load() > 0) {
+        if (parkingWaiters.value > 0) {
             parkingLock.withLock { parkingCondition.signalAll() }
         }
 
         // Notify any registered callbacks (e.g., for coroutines)
-        for (i in callbacks.indices) {
-            callbacks[i].invoke()
+        for (callback in callbacks.value) {
+            callback.invoke()
         }
     }
 
@@ -55,16 +52,16 @@ class NotificationHandle(val channelState: ChannelState) {
      * used to unregister the callback.
      */
     fun onStateChangeCallback(callback: () -> Unit): CallbackHandle {
-        callbacks.add(callback)
-        return CallbackHandle { callbacks.remove(callback) }
+        callbacks.update { it + callback }
+        return CallbackHandle { callbacks.update { list -> list - callback } }
     }
 
     /**
      * Wait using busy spin strategy - ultra-low latency, but very high CPU usage.
      */
     fun waitWithBusySpin() {
-        val startVersion = stateVersion.load()
-        while (channelState.isEmpty && stateVersion.load() == startVersion) {
+        val startVersion = stateVersion.value
+        while (channelState.isEmpty && stateVersion.value == startVersion) {
             ThreadHints.onSpinWait()
         }
     }
@@ -73,8 +70,8 @@ class NotificationHandle(val channelState: ChannelState) {
      * Wait using yielding strategy - CPU friendly spin.
      */
     fun waitWithYield() {
-        val startVersion = stateVersion.load()
-        while (channelState.isEmpty && stateVersion.load() == startVersion) {
+        val startVersion = stateVersion.value
+        while (channelState.isEmpty && stateVersion.value == startVersion) {
             Thread.yield()
         }
     }
@@ -86,7 +83,7 @@ class NotificationHandle(val channelState: ChannelState) {
         // Fast check before expensive parking
         if (!channelState.isEmpty) return
 
-        parkingWaiters.incrementAndFetch()
+        parkingWaiters.incrementAndGet()
         try {
             parkingLock.withLock {
                 // Double-check inside lock to avoid lost wake-ups
@@ -95,7 +92,7 @@ class NotificationHandle(val channelState: ChannelState) {
                 }
             }
         } finally {
-            parkingWaiters.decrementAndFetch()
+            parkingWaiters.decrementAndGet()
         }
     }
 
@@ -103,8 +100,8 @@ class NotificationHandle(val channelState: ChannelState) {
      * Wait using sleep strategy with specified duration.
      */
     fun waitWithSleep(sleepNanos: Long) {
-        val startVersion = stateVersion.load()
-        while (channelState.isEmpty && stateVersion.load() == startVersion) {
+        val startVersion = stateVersion.value
+        while (channelState.isEmpty && stateVersion.value == startVersion) {
             try {
                 Thread.sleep(sleepNanos / 1_000_000, (sleepNanos % 1_000_000).toInt())
             } catch (_: InterruptedException) {

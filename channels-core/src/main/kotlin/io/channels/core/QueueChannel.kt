@@ -1,23 +1,23 @@
 package io.channels.core
 
 import io.channels.core.blocking.NotificationHandle
+import kotlinx.atomicfu.atomic
 import org.jctools.queues.MpscArrayQueue
 import org.jctools.queues.MpscUnboundedXaddArrayQueue
 import org.jctools.queues.SpscArrayQueue
 import org.jctools.queues.SpscUnboundedArrayQueue
-import java.util.Queue
-import kotlin.concurrent.atomics.AtomicBoolean
-import kotlin.concurrent.atomics.ExperimentalAtomicApi
+import java.util.*
+
+private typealias OnCloseCallback = () -> Unit
 
 /**
  * A [Queue]-based [Channel].
  * */
-@OptIn(ExperimentalAtomicApi::class)
 class QueueChannel<T : Any> @JvmOverloads constructor(
     private val queue: Queue<T>,
-    private val onClose: Runnable = Runnable {},
+    private val onClose: OnCloseCallback = {},
 ) : Channel<T> {
-    private val closed = AtomicBoolean(false)
+    private val closed = atomic(false)
 
     override val notificationHandle = NotificationHandle(this)
 
@@ -31,8 +31,8 @@ class QueueChannel<T : Any> @JvmOverloads constructor(
     }
 
     override fun close() {
-        if (closed.compareAndSet(expectedValue = false, newValue = true)) {
-            onClose.run()
+        if (closed.compareAndSet(false, true)) {
+            onClose.invoke()
             notificationHandle.signalStateChange()
         }
     }
@@ -60,7 +60,7 @@ class QueueChannel<T : Any> @JvmOverloads constructor(
     }
 
     override val isClosed: Boolean
-        get() = closed.load()
+        get() = closed.value
 
     override val size: Int
         get() = queue.size
@@ -79,7 +79,7 @@ class QueueChannel<T : Any> @JvmOverloads constructor(
          * */
         @JvmStatic
         @JvmOverloads
-        fun <T : Any> mpscUnbounded(onClose: Runnable = Runnable {}): QueueChannel<T> {
+        fun <T : Any> mpscUnbounded(onClose: OnCloseCallback = {}): QueueChannel<T> {
             return QueueChannel(MpscUnboundedXaddArrayQueue(DEFAULT_CHUNK_SIZE), onClose)
         }
 
@@ -89,7 +89,7 @@ class QueueChannel<T : Any> @JvmOverloads constructor(
          * */
         @JvmStatic
         @JvmOverloads
-        fun <T : Any> mpscBounded(capacity: Int, onClose: Runnable = Runnable {}): QueueChannel<T> {
+        fun <T : Any> mpscBounded(capacity: Int, onClose: OnCloseCallback = {}): QueueChannel<T> {
             return QueueChannel(MpscArrayQueue(capacity), onClose)
         }
 
@@ -98,7 +98,7 @@ class QueueChannel<T : Any> @JvmOverloads constructor(
          * */
         @JvmStatic
         @JvmOverloads
-        fun <T : Any> spscUnbounded(onClose: Runnable = Runnable {}): QueueChannel<T> {
+        fun <T : Any> spscUnbounded(onClose: OnCloseCallback = {}): QueueChannel<T> {
             return QueueChannel(SpscUnboundedArrayQueue(DEFAULT_CHUNK_SIZE), onClose)
         }
 
@@ -108,7 +108,7 @@ class QueueChannel<T : Any> @JvmOverloads constructor(
          * */
         @JvmStatic
         @JvmOverloads
-        fun <T : Any> spscBounded(capacity: Int, onClose: Runnable = Runnable {}): QueueChannel<T> {
+        fun <T : Any> spscBounded(capacity: Int, onClose: OnCloseCallback = {}): QueueChannel<T> {
             return QueueChannel(SpscArrayQueue<T>(capacity), onClose)
         }
     }

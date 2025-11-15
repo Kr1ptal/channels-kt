@@ -1,23 +1,20 @@
 package io.channels.core
 
-import java.util.concurrent.ConcurrentHashMap
-import java.util.concurrent.CopyOnWriteArrayList
-import kotlin.concurrent.atomics.AtomicBoolean
-import kotlin.concurrent.atomics.AtomicInt
-import kotlin.concurrent.atomics.ExperimentalAtomicApi
-import kotlin.concurrent.atomics.fetchAndIncrement
+import co.touchlab.stately.collections.ConcurrentMutableMap
+import kotlinx.atomicfu.AtomicRef
+import kotlinx.atomicfu.atomic
+import kotlinx.atomicfu.update
 
 /**
  * A [SubscriptionChannel] that supports multiple subscribers and sends (broadcasts) elements to all subscribers.
  * */
-@OptIn(ExperimentalAtomicApi::class)
 class BroadcastChannel<T : Any>(
     private val channelFactory: ChannelFactory<T>,
 ) : ChannelSender<T>, SubscriptionChannel<T> {
-    private val id = AtomicInt(0)
-    private val idToSubscription = ConcurrentHashMap<Int, Channel<T>>()
-    private val subscriptions = CopyOnWriteArrayList<Channel<T>>()
-    private val closed = AtomicBoolean(false)
+    private val id = atomic(0)
+    private val idToSubscription = ConcurrentMutableMap<Int, Channel<T>>()
+    private val subscriptions: AtomicRef<List<Channel<T>>> = atomic(emptyList())
+    private val closed = atomic(false)
 
     @Volatile
     private var seqLock = 0
@@ -25,10 +22,10 @@ class BroadcastChannel<T : Any>(
     override fun subscribe(): ChannelReceiver<T> {
         seqLock++
 
-        val id = id.fetchAndIncrement()
+        val id = id.getAndIncrement()
         val onClose = unsub@{
             val sub = idToSubscription.remove(id) ?: return@unsub
-            subscriptions.remove(sub)
+            subscriptions.update { it - sub }
         }
 
         val ret = channelFactory.newChannel(onClose)
@@ -38,7 +35,7 @@ class BroadcastChannel<T : Any>(
             ret.close()
         } else {
             idToSubscription[id] = ret
-            subscriptions.add(ret)
+            subscriptions.update { it + ret }
         }
 
         seqLock++
@@ -51,14 +48,15 @@ class BroadcastChannel<T : Any>(
      * channel, false otherwise.
      * */
     override fun offer(element: T): Boolean {
-        if (subscriptions.isEmpty()) {
+        val currentSubs = subscriptions.value
+        if (currentSubs.isEmpty()) {
             return false
         }
 
         var success = false
 
         // need to use for-each iterator in case elements get removed
-        for (sub in subscriptions) {
+        for (sub in currentSubs) {
             val wasSent = sub.offer(element)
             success = success || wasSent
         }
@@ -78,6 +76,7 @@ class BroadcastChannel<T : Any>(
                 }
 
                 // need to use for-each iterator in case elements get removed
+                val subscriptions = this@BroadcastChannel.subscriptions.value
                 for (sub in subscriptions) {
                     sub.close()
                 }
@@ -90,13 +89,13 @@ class BroadcastChannel<T : Any>(
     }
 
     override val isClosed: Boolean
-        get() = closed.load()
+        get() = closed.value
 
     /**
      * Current number of subscribers.
      * */
     override val size: Int
-        get() = subscriptions.size
+        get() = subscriptions.value.size
 
     /**
      * Factory for creating [io.channels.core.BroadcastChannel]'s subscription channels.
