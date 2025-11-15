@@ -16,7 +16,7 @@ concurrency:
   cancel-in-progress: ${{ github.ref != 'refs/heads/master' }}
 
 jobs:
-  java-test:
+  test:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5
@@ -35,7 +35,7 @@ jobs:
           path: build/reports/ktlint
 
       - name: Gradle test
-        run: ./gradlew test --no-watch-fs --stacktrace -Dlog.level=debug
+        run: ./gradlew allTests --no-watch-fs --stacktrace -Dlog.level=debug
 
       - uses: actions/upload-artifact@v5
         if: failure()
