@@ -5,6 +5,8 @@ junit = "6.0.1"
 kotest = "5.9.1"
 jmh = "1.37"
 ktlint-tool = "1.6.0"
+atomicfu = "0.25.0"
+stately = "2.1.0"
 
 [libraries]
 kotlin-bom = { module = "org.jetbrains.kotlin:kotlin-bom", version.ref = "kotlin" }
@@ -16,6 +18,10 @@ ktlint-bom = { module = "com.pinterest.ktlint:ktlint-bom", version.ref = "ktlint
 ktlint-sarif = { module = "com.pinterest.ktlint:ktlint-cli-reporter-sarif", version.ref = "ktlint-tool" }
 
 jctools = { module = "org.jctools:jctools-core", version = "4.0.5" }
+
+# KMP concurrent collections
+atomicfu = { module = "org.jetbrains.kotlinx:atomicfu", version.ref = "atomicfu" }
+stately-collections = { module = "co.touchlab:stately-concurrent-collections", version.ref = "stately" }
 
 ##################### TEST #####################
 junit-api = { module = "org.junit.jupiter:junit-jupiter-api", version.ref = "junit" }
