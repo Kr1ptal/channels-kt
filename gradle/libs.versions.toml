@@ -5,11 +5,13 @@ kotest = "5.9.1"
 ktlint-tool = "1.6.0"
 atomicfu = "0.25.0"
 stately = "2.1.0"
+dokka = "2.1.0"
 
 [libraries]
 kotlin-bom = { module = "org.jetbrains.kotlin:kotlin-bom", version.ref = "kotlin" }
 kotlin-gradle = { module = "org.jetbrains.kotlin:kotlin-gradle-plugin", version.ref = "kotlin" }
 kotlin-coroutines = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-core", version = "1.10.2" }
+dokka-gradle = { module = "org.jetbrains.dokka:dokka-gradle-plugin", version.ref = "dokka" }
 
 ktlint-gradle = { module = "org.jlleitschuh.gradle:ktlint-gradle", version = "12.1.0" }
 ktlint-bom = { module = "com.pinterest.ktlint:ktlint-bom", version.ref = "ktlint-tool" }
@@ -44,4 +46,5 @@ kotest = ["kotest-junit5", "kotest-assertions", "kotest-property", "kotest-frame
 [plugins]
 kotlin-jvm = { id = "org.jetbrains.kotlin.jvm", version.ref = "kotlin" }
 kotlin-multiplatform = { id = "org.jetbrains.kotlin.multiplatform", version.ref = "kotlin" }
+dokka = { id = "org.jetbrains.dokka", version.ref = "dokka" }
 jreleaser = { id = "org.jreleaser", version = "1.20.0" }

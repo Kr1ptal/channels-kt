@@ -14,8 +14,6 @@ It also contains specialized implementations of channels, such as <b>BroadcastCh
 - Different blocking wait strategies: sleeping, parking, yielding, busy spinning, suspending (coroutines)
 - Channel operators: `map`, `mapNotNull`, `filter`
 
-## Usage
-
 ## 🚀 Quickstart
 
 All releases are published to Maven Central. Changelog of each release can be found

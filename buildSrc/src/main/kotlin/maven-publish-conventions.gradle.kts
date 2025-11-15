@@ -56,10 +56,24 @@ project.pluginManager.withPlugin("java-platform") {
 }
 
 project.pluginManager.withPlugin("org.jetbrains.kotlin.multiplatform") {
+    // Apply Dokka plugin for documentation generation
+    apply(plugin = "org.jetbrains.dokka")
+
+    // Create javadoc jar from Dokka HTML output (Dokka V2 API)
+    val dokkaGeneratePublicationHtml by tasks.getting
+
+    val javadocJar by tasks.registering(Jar::class) {
+        dependsOn(dokkaGeneratePublicationHtml)
+        archiveClassifier.set("javadoc")
+        from(layout.buildDirectory.dir("dokka/html"))
+    }
+
     publishing {
         repositories(configureMavenCentralRepo)
 
         publications.withType<MavenPublication> {
+            // Add javadoc jar to all publications
+            artifact(javadocJar)
             pom(configurePom)
         }
     }
