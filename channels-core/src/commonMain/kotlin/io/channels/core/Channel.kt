@@ -5,7 +5,6 @@ import io.channels.core.blocking.NotificationHandle
 import io.channels.core.operator.FilterChannel
 import io.channels.core.operator.MapChannel
 import io.channels.core.operator.MapNotNullChannel
-import java.util.concurrent.ThreadFactory
 import kotlin.time.DurationUnit
 import kotlin.time.toDuration
 
@@ -16,8 +15,8 @@ import kotlin.time.toDuration
 interface Channel<T : Any> : ChannelSender<T>, ChannelReceiver<T>
 
 /**
- * A sender end of a channel. Same sender can possibly be used by multiple threads at the same time, but only if the
- * underlying queue supports it.
+ * A sender end of a channel. The same sender can possibly be used by multiple threads at the same time, but only
+ * if the underlying queue supports it.
  * */
 interface ChannelSender<in T : Any> : ChannelState, AutoCloseable {
     /**
@@ -42,40 +41,6 @@ interface ChannelReceiver<out T : Any> : ChannelState, AutoCloseable {
      * until the channel is closed.
      * */
     fun forEach(consumer: ChannelConsumer<in T>)
-
-    /**
-     * Iterates over the elements of this channel, calling [consumer] for each element. This does not block the calling
-     * thread and instead iterates on a new daemon thread. If available, a virtual thread is created, falling back
-     * to platform threads.
-     * */
-    fun forEachAsync(consumer: ChannelConsumer<in T>): ChannelReceiver<T> {
-        return forEachAsync(null, consumer)
-    }
-
-    /**
-     * Iterates over the elements of this channel, calling [consumer] for each element. This does not block the calling
-     * thread and instead iterates on a new daemon thread with optional [threadName]. If available, a virtual thread
-     * is created, falling back to platform threads.
-     * */
-    fun forEachAsync(threadName: String?, consumer: ChannelConsumer<in T>): ChannelReceiver<T> {
-        val thread = ThreadFactoryProvider.maybeVirtualThread { forEach(consumer) }
-
-        if (threadName != null) {
-            thread.name = threadName
-        }
-        thread.isDaemon = true
-        thread.start()
-        return this
-    }
-
-    /**
-     * Iterates over the elements of this channel, calling [consumer] for each element. This does not block the calling
-     * thread and instead iterates on a new thread, created by provided [threadFactory].
-     * */
-    fun forEachAsync(threadFactory: ThreadFactory, consumer: ChannelConsumer<in T>): ChannelReceiver<T> {
-        threadFactory.newThread { forEach(consumer) }.start()
-        return this
-    }
 
     /**
      * Remove and return the next element from the channel, blocking the calling thread until an element is available.

@@ -2,11 +2,9 @@ package io.channels.core.blocking
 
 import io.channels.core.ChannelConsumer
 import io.channels.core.ChannelReceiver
-import kotlin.time.DurationUnit
-import kotlin.time.toDuration
 
 /**
- * Wrapper that applies a specific blocking strategy to a [ChannelReceiver].
+ * Wrapper that applies a specific blocking strategy to a [io.channels.core.ChannelReceiver].
  * Each wrapper is immutable and creates new instances when strategy changes.
  */
 class BlockingStrategyReceiver<T : Any>(
@@ -33,27 +31,5 @@ class BlockingStrategyReceiver<T : Any>(
             if (value != null || delegate.isClosed) return value
             waitFunction.invoke(notificationHandle)
         }
-    }
-
-    // Strategy methods - create new wrappers with different wait functions
-    override fun withBusySpinBlockingStrategy(): ChannelReceiver<T> {
-        return BlockingStrategyReceiver(delegate, NotificationHandle::waitWithBusySpin)
-    }
-
-    override fun withParkingBlockingStrategy(): ChannelReceiver<T> {
-        return BlockingStrategyReceiver(delegate, NotificationHandle::waitWithParking)
-    }
-
-    override fun withSleepBlockingStrategy(): ChannelReceiver<T> {
-        return withSleepBlockingStrategy(100, DurationUnit.NANOSECONDS)
-    }
-
-    override fun withSleepBlockingStrategy(duration: Long, unit: DurationUnit): ChannelReceiver<T> {
-        val sleepNanos = duration.toDuration(unit).inWholeNanoseconds
-        return BlockingStrategyReceiver(delegate) { it.waitWithSleep(sleepNanos) }
-    }
-
-    override fun withYieldingBlockingStrategy(): ChannelReceiver<T> {
-        return BlockingStrategyReceiver(delegate, NotificationHandle::waitWithYield)
     }
 }

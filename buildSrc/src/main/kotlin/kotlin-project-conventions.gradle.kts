@@ -60,6 +60,7 @@ pluginManager.withPlugin("org.jetbrains.kotlin.multiplatform") {
                         val defaultArgs = listOf(
                             "-progressive",
                             "-Xjvm-default=all",
+                            "-Xexpect-actual-classes",
                         )
 
                         val specificArgs = if (isTestTask) {

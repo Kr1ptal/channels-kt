@@ -11,13 +11,13 @@ import kotlinx.atomicfu.update
  * Highly optimized notification handle for coordinating multiple blocking strategies.
  *
  * Handle is designed to support:
- * - Lock-free fast path for spinning strategies
+ * - Lock-free fast-path for spinning strategies
  * - Consolidated lock for parking strategies to minimize contention
  * - Callback support for custom notification strategies (e.g., coroutines)
  */
 class NotificationHandle(val channelState: ChannelState) {
     // Fast path: atomic counter for spinning strategies
-    private val stateVersion = atomic(0)
+    private val _stateVersion = atomic(0)
 
     // Slow path: consolidated parking for blocking strategies
     private val parkingLock = reentrantLock()
@@ -34,7 +34,7 @@ class NotificationHandle(val channelState: ChannelState) {
      */
     fun signalStateChange() {
         // Increment version for spinning strategies (lock-free)
-        stateVersion.incrementAndGet()
+        _stateVersion.incrementAndGet()
 
         // Wake up parking strategies only if there are waiters
         if (parkingWaiters.value > 0) {
@@ -60,9 +60,9 @@ class NotificationHandle(val channelState: ChannelState) {
      * Wait using busy spin strategy - ultra-low latency, but very high CPU usage.
      */
     fun waitWithBusySpin() {
-        val startVersion = stateVersion.value
-        while (channelState.isEmpty && stateVersion.value == startVersion) {
-            ThreadHints.onSpinWait()
+        val startVersion = _stateVersion.value
+        while (channelState.isEmpty && _stateVersion.value == startVersion) {
+            PlatformWaitStrategy.onSpinWait()
         }
     }
 
@@ -70,9 +70,9 @@ class NotificationHandle(val channelState: ChannelState) {
      * Wait using yielding strategy - CPU friendly spin.
      */
     fun waitWithYield() {
-        val startVersion = stateVersion.value
-        while (channelState.isEmpty && stateVersion.value == startVersion) {
-            Thread.yield()
+        val startVersion = _stateVersion.value
+        while (channelState.isEmpty && _stateVersion.value == startVersion) {
+            PlatformWaitStrategy.yieldThread()
         }
     }
 
@@ -100,14 +100,9 @@ class NotificationHandle(val channelState: ChannelState) {
      * Wait using sleep strategy with specified duration.
      */
     fun waitWithSleep(sleepNanos: Long) {
-        val startVersion = stateVersion.value
-        while (channelState.isEmpty && stateVersion.value == startVersion) {
-            try {
-                Thread.sleep(sleepNanos / 1_000_000, (sleepNanos % 1_000_000).toInt())
-            } catch (_: InterruptedException) {
-                Thread.currentThread().interrupt()
-                break
-            }
+        val startVersion = _stateVersion.value
+        while (channelState.isEmpty && _stateVersion.value == startVersion) {
+            PlatformWaitStrategy.sleepNanos(sleepNanos)
         }
     }
 
