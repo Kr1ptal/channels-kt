@@ -3,10 +3,18 @@ plugins {
     `maven-publish-conventions`
 }
 
-dependencies {
-    api(project(":channels-core"))
-    implementation(libs.kotlin.coroutines)
+kotlin {
+    sourceSets {
+        val commonMain by getting {
+            dependencies {
+                api(project(":channels-core"))
+            }
+        }
 
-    testImplementation(libs.bundles.junit)
-    testImplementation(libs.bundles.kotest)
+        val jvmMain by getting {
+            dependencies {
+                implementation(libs.kotlin.coroutines)
+            }
+        }
+    }
 }

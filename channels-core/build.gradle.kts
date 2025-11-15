@@ -3,11 +3,19 @@ plugins {
     `maven-publish-conventions`
 }
 
-dependencies {
-    implementation(libs.jctools)
-    implementation(libs.atomicfu)
-    implementation(libs.stately.collections)
+kotlin {
+    sourceSets {
+        val commonMain by getting {
+            dependencies {
+                implementation(libs.atomicfu)
+                implementation(libs.stately.collections)
+            }
+        }
 
-    testImplementation(libs.bundles.junit)
-    testImplementation(libs.bundles.kotest)
+        val jvmMain by getting {
+            dependencies {
+                implementation(libs.jctools)
+            }
+        }
+    }
 }
