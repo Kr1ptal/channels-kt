@@ -23,7 +23,6 @@ class OneShotChannel<T : Any> @PlatformOverloads constructor(value: T? = null) :
     override fun close() {
         if (state.getAndSet(CONSUMED) !== CONSUMED) {
             notificationHandle.signalStateChange()
-            notificationHandle.close()
         }
     }
 

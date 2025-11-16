@@ -10,7 +10,7 @@ package io.channels.core.blocking
  * On JVM, this wraps `java.util.concurrent.locks.ReentrantLock` + `Condition`.
  * On Native (iOS), this uses `pthread_mutex_t` + `pthread_cond_t`.
  */
-internal expect class PlatformLock() : AutoCloseable {
+internal expect class PlatformLock() {
     /**
      * Acquire the lock.
      * Blocks until the lock is available.
@@ -39,8 +39,6 @@ internal expect class PlatformLock() : AutoCloseable {
      * memory visibility, though not strictly required on all platforms.
      */
     fun signalAll()
-
-    override fun close()
 }
 
 /**

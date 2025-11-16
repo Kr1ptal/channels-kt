@@ -7,7 +7,12 @@ plugins {
 
 // Use Kotest-specific test tasks instead of standard KMP test tasks
 tasks.named("allTests") {
-    dependsOn(":channels-core:jvmKotest", ":channels-coroutines:jvmKotest")
+    dependsOn(
+        ":channels-core:jvmKotest",
+        ":channels-coroutines:jvmKotest",
+        ":channels-core:iosSimulatorArm64Test",
+        ":channels-coroutines:iosSimulatorArm64Test",
+    )
 }
 
 tasks.check {

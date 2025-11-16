@@ -13,7 +13,7 @@ import kotlinx.atomicfu.update
  * - Consolidated lock for parking strategies to minimize contention
  * - Callback support for custom notification strategies (e.g., coroutines)
  */
-class NotificationHandle(val channelState: ChannelState) : AutoCloseable {
+class NotificationHandle(val channelState: ChannelState) {
     // Fast path: atomic counter for spinning strategies
     private val stateVersion = atomic(0)
 
@@ -101,10 +101,6 @@ class NotificationHandle(val channelState: ChannelState) : AutoCloseable {
         while (channelState.isEmpty && stateVersion.value == startVersion) {
             PlatformWaitStrategy.sleepNanos(sleepNanos)
         }
-    }
-
-    override fun close() {
-        parkingLock.close()
     }
 
     /**
