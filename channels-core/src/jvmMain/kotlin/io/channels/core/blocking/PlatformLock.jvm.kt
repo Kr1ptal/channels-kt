@@ -9,7 +9,7 @@ import java.util.concurrent.locks.ReentrantLock
  * This implementation wraps [ReentrantLock] and its associated [Condition]
  * to provide the integrated lock + condition API.
  */
-internal actual class PlatformLock : AutoCloseable {
+internal actual class PlatformLock {
     private val lock = ReentrantLock()
     private val condition: Condition = lock.newCondition()
 
@@ -27,9 +27,5 @@ internal actual class PlatformLock : AutoCloseable {
 
     actual fun signalAll() {
         condition.signalAll()
-    }
-
-    actual override fun close() {
-        // no-op
     }
 }

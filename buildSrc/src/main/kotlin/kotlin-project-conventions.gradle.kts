@@ -45,7 +45,8 @@ pluginManager.withPlugin("org.jetbrains.kotlin.multiplatform") {
     configure<KotlinMultiplatformExtension> {
         // Define standard targets
         jvm()
-        iosArm64()
+        iosArm64()           // Physical devices (for release builds)
+        iosSimulatorArm64()  // Simulator for Apple Silicon (enables testing)
 
         jvmToolchain(Constants.testJavaVersion.majorVersion.toInt())
 
@@ -83,13 +84,6 @@ pluginManager.withPlugin("org.jetbrains.kotlin.multiplatform") {
         sourceSets {
             val commonTest by getting {
                 dependencies {
-                    implementation(libs.bundles.kotest)
-                }
-            }
-
-            val jvmTest by getting {
-                dependencies {
-                    implementation(libs.bundles.junit)
                     implementation(libs.bundles.kotest)
                 }
             }

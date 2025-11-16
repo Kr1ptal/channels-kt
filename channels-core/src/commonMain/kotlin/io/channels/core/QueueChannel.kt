@@ -27,7 +27,6 @@ class QueueChannel<T : Any>(
         if (closed.compareAndSet(false, true)) {
             onClose.invoke()
             notificationHandle.signalStateChange()
-            notificationHandle.close()
         }
     }
 
