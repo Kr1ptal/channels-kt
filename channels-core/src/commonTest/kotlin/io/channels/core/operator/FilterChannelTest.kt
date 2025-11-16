@@ -3,7 +3,9 @@ package io.channels.core.operator
 import io.channels.core.QueueChannel
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
-import kotlin.concurrent.thread
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 
 class FilterChannelTest : FunSpec({
     test("filters elements based on predicate") {
@@ -40,11 +42,12 @@ class FilterChannelTest : FunSpec({
         val filtered = source.filter { it % 2 == 0 }
         val results = mutableListOf<Int>()
 
-        thread {
+        launch(Dispatchers.Default) {
             source.offer(1)
             source.offer(2)
             source.offer(3)
             source.offer(4)
+            delay(100)
             source.close()
         }
 

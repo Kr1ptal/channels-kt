@@ -3,8 +3,6 @@ package io.channels.core.blocking
 import io.channels.core.ChannelState
 import kotlinx.atomicfu.AtomicRef
 import kotlinx.atomicfu.atomic
-import kotlinx.atomicfu.locks.reentrantLock
-import kotlinx.atomicfu.locks.withLock
 import kotlinx.atomicfu.update
 
 /**
@@ -15,13 +13,12 @@ import kotlinx.atomicfu.update
  * - Consolidated lock for parking strategies to minimize contention
  * - Callback support for custom notification strategies (e.g., coroutines)
  */
-class NotificationHandle(val channelState: ChannelState) {
+class NotificationHandle(val channelState: ChannelState) : AutoCloseable {
     // Fast path: atomic counter for spinning strategies
-    private val _stateVersion = atomic(0)
+    private val stateVersion = atomic(0)
 
     // Slow path: consolidated parking for blocking strategies
-    private val parkingLock = reentrantLock()
-    private val parkingCondition = parkingLock.newCondition()
+    private val parkingLock = PlatformLock()
     private val parkingWaiters = atomic(0)
 
     // Callback support for custom strategies - we use atomic reference with an immutable list because
@@ -34,11 +31,11 @@ class NotificationHandle(val channelState: ChannelState) {
      */
     fun signalStateChange() {
         // Increment version for spinning strategies (lock-free)
-        _stateVersion.incrementAndGet()
+        stateVersion.incrementAndGet()
 
         // Wake up parking strategies only if there are waiters
         if (parkingWaiters.value > 0) {
-            parkingLock.withLock { parkingCondition.signalAll() }
+            parkingLock.withLock { parkingLock.signalAll() }
         }
 
         // Notify any registered callbacks (e.g., for coroutines)
@@ -60,8 +57,8 @@ class NotificationHandle(val channelState: ChannelState) {
      * Wait using busy spin strategy - ultra-low latency, but very high CPU usage.
      */
     fun waitWithBusySpin() {
-        val startVersion = _stateVersion.value
-        while (channelState.isEmpty && _stateVersion.value == startVersion) {
+        val startVersion = stateVersion.value
+        while (channelState.isEmpty && stateVersion.value == startVersion) {
             PlatformWaitStrategy.onSpinWait()
         }
     }
@@ -70,8 +67,8 @@ class NotificationHandle(val channelState: ChannelState) {
      * Wait using yielding strategy - CPU friendly spin.
      */
     fun waitWithYield() {
-        val startVersion = _stateVersion.value
-        while (channelState.isEmpty && _stateVersion.value == startVersion) {
+        val startVersion = stateVersion.value
+        while (channelState.isEmpty && stateVersion.value == startVersion) {
             PlatformWaitStrategy.yieldThread()
         }
     }
@@ -88,7 +85,7 @@ class NotificationHandle(val channelState: ChannelState) {
             parkingLock.withLock {
                 // Double-check inside lock to avoid lost wake-ups
                 if (channelState.isEmpty) {
-                    parkingCondition.await()
+                    parkingLock.await()
                 }
             }
         } finally {
@@ -100,10 +97,14 @@ class NotificationHandle(val channelState: ChannelState) {
      * Wait using sleep strategy with specified duration.
      */
     fun waitWithSleep(sleepNanos: Long) {
-        val startVersion = _stateVersion.value
-        while (channelState.isEmpty && _stateVersion.value == startVersion) {
+        val startVersion = stateVersion.value
+        while (channelState.isEmpty && stateVersion.value == startVersion) {
             PlatformWaitStrategy.sleepNanos(sleepNanos)
         }
+    }
+
+    override fun close() {
+        parkingLock.close()
     }
 
     /**

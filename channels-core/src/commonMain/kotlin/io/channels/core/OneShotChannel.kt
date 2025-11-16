@@ -7,7 +7,7 @@ import kotlinx.atomicfu.atomic
  * A [Channel] that can send / receive a single element. After the element is sent and received, the channel is closed
  * and cannot be used again.
  * */
-class OneShotChannel<T : Any> @JvmOverloads constructor(value: T? = null) : Channel<T> {
+class OneShotChannel<T : Any> @PlatformOverloads constructor(value: T? = null) : Channel<T> {
     private val state = atomic<Any?>(value)
 
     override val notificationHandle = NotificationHandle(this)
@@ -23,6 +23,7 @@ class OneShotChannel<T : Any> @JvmOverloads constructor(value: T? = null) : Chan
     override fun close() {
         if (state.getAndSet(CONSUMED) !== CONSUMED) {
             notificationHandle.signalStateChange()
+            notificationHandle.close()
         }
     }
 

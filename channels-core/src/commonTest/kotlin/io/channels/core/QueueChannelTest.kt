@@ -2,7 +2,9 @@ package io.channels.core
 
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
-import kotlin.concurrent.thread
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 
 class QueueChannelTest : FunSpec({
     test("offers are accepted until capacity is reached") {
@@ -62,8 +64,8 @@ class QueueChannelTest : FunSpec({
 
     test("take blocks until element is available") {
         val channel = QueueChannel.mpscBounded<String>(2)
-        thread {
-            Thread.sleep(250)
+        launch(Dispatchers.Default) {
+            delay(250)
             channel.offer("hello")
         }
 
@@ -73,8 +75,8 @@ class QueueChannelTest : FunSpec({
 
     test("take returns null on close without any element") {
         val channel = QueueChannel.mpscBounded<String>(2)
-        thread {
-            Thread.sleep(250)
+        launch(Dispatchers.Default) {
+            delay(250)
             channel.close()
         }
 
@@ -87,10 +89,10 @@ class QueueChannelTest : FunSpec({
         val channel = QueueChannel.mpscBounded<String>(2)
         val elements = mutableListOf<String>()
 
-        thread {
+        launch(Dispatchers.Default) {
             channel.offer("hello")
             channel.offer("world")
-            Thread.sleep(100)
+            delay(100)
             channel.close()
         }
 
@@ -104,14 +106,20 @@ class QueueChannelTest : FunSpec({
         val channel = QueueChannel.mpscBounded<String>(2)
         val elements = mutableListOf<String>()
 
-        val receiver = channel.forEachAsync("test-processor") { elements.add(it) }
+        launch(Dispatchers.Default) {
+            channel.forEach {
+                elements.add(it)
+            }
+        }
 
-        channel.offer("hello")
-        channel.offer("world")
-        Thread.sleep(200)
+        val job = launch(Dispatchers.Default) {
+            channel.offer("hello")
+            channel.offer("world")
+            delay(200)
+            channel.close()
+        }
 
-        receiver.close()
-
+        job.join()
         elements shouldBe listOf("hello", "world")
         channel.isClosed shouldBe true
     }

@@ -4,6 +4,7 @@ import co.touchlab.stately.collections.ConcurrentMutableMap
 import kotlinx.atomicfu.AtomicRef
 import kotlinx.atomicfu.atomic
 import kotlinx.atomicfu.update
+import kotlin.concurrent.Volatile
 
 /**
  * A [SubscriptionChannel] that supports multiple subscribers and sends (broadcasts) elements to all subscribers.
@@ -109,7 +110,7 @@ class BroadcastChannel<T : Any>(
          * Returns a [BroadcastChannel] that uses an unbounded MPSC (multiple-producer, single-consumer) queue for
          * each subscriber.
          * */
-        @JvmStatic
+        @PlatformStatic
         fun <T : Any> mpscUnbounded(): BroadcastChannel<T> {
             return BroadcastChannel { QueueChannel.mpscUnbounded(it) }
         }
@@ -118,7 +119,7 @@ class BroadcastChannel<T : Any>(
          * Returns a [BroadcastChannel] that uses an MPSC (multiple-producer, single-consumer) queue with a bounded
          * capacity for each subscriber.
          * */
-        @JvmStatic
+        @PlatformStatic
         fun <T : Any> mpscBounded(capacity: Int): BroadcastChannel<T> {
             return BroadcastChannel { QueueChannel.mpscBounded(capacity, it) }
         }
@@ -127,7 +128,7 @@ class BroadcastChannel<T : Any>(
          * Returns a [BroadcastChannel] that uses an unbounded SPSC (single-producer, single-consumer) queue for
          * each subscriber.
          * */
-        @JvmStatic
+        @PlatformStatic
         fun <T : Any> spscUnbounded(): BroadcastChannel<T> {
             return BroadcastChannel { QueueChannel.spscUnbounded(it) }
         }
@@ -136,7 +137,7 @@ class BroadcastChannel<T : Any>(
          * Returns a [BroadcastChannel] that uses an SPSC (single-producer, single-consumer) queue with a bounded
          * capacity for each subscriber.
          * */
-        @JvmStatic
+        @PlatformStatic
         fun <T : Any> spscBounded(capacity: Int): BroadcastChannel<T> {
             return BroadcastChannel { QueueChannel.spscBounded(capacity, it) }
         }
