@@ -45,8 +45,7 @@ pluginManager.withPlugin("org.jetbrains.kotlin.multiplatform") {
     configure<KotlinMultiplatformExtension> {
         // Define standard targets
         jvm()
-        // TODO: Re-enable once native source code is added
-        // iosArm64()
+        iosArm64()
 
         jvmToolchain(Constants.testJavaVersion.majorVersion.toInt())
 
@@ -84,7 +83,7 @@ pluginManager.withPlugin("org.jetbrains.kotlin.multiplatform") {
         sourceSets {
             val commonTest by getting {
                 dependencies {
-                    implementation(kotlin("test"))
+                    implementation(libs.bundles.kotest)
                 }
             }
 
@@ -95,10 +94,5 @@ pluginManager.withPlugin("org.jetbrains.kotlin.multiplatform") {
                 }
             }
         }
-    }
-
-    // Configure JVM test tasks to use JUnit Platform (for Kotest)
-    tasks.withType<Test>().configureEach {
-        useJUnitPlatform()
     }
 }

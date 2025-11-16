@@ -2,30 +2,12 @@ import org.jreleaser.model.Active
 
 plugins {
     `project-conventions`
-    `jacoco-report-aggregation`
     alias(libs.plugins.jreleaser)
 }
 
-dependencies {
-    // contains only submodules that are released
-    val releasedSubmodules = listOf(
-        ":channels-core",
-        ":channels-coroutines",
-    )
-
-    releasedSubmodules.forEach {
-        jacocoAggregation(project(it))
-    }
-}
-
-// TODO, see: https://github.com/Kr1ptal/ethers-kt/issues/66
-/*tasks.withType<Test> {
-    finalizedBy(tasks.named<JacocoReport>("testCodeCoverageReport"))
-}*/
-
-// KMP modules already provide allTests task
+// Use Kotest-specific test tasks instead of standard KMP test tasks
 tasks.named("allTests") {
-    dependsOn(":channels-core:allTests", ":channels-coroutines:allTests")
+    dependsOn(":channels-core:jvmKotest", ":channels-coroutines:jvmKotest")
 }
 
 tasks.check {
