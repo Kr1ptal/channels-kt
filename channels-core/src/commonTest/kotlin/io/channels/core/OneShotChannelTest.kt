@@ -2,7 +2,9 @@ package io.channels.core
 
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
-import kotlin.concurrent.thread
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 
 class OneShotChannelTest : FunSpec({
     test("only a single offer is accepted") {
@@ -58,8 +60,8 @@ class OneShotChannelTest : FunSpec({
 
     test("take blocks until element is available") {
         val channel = OneShotChannel<String>()
-        thread {
-            Thread.sleep(250)
+        launch(Dispatchers.Default) {
+            delay(250)
             channel.offer("hello")
         }
 
@@ -69,8 +71,8 @@ class OneShotChannelTest : FunSpec({
 
     test("take returns null on close without any element") {
         val channel = OneShotChannel<String>()
-        thread {
-            Thread.sleep(250)
+        launch(Dispatchers.Default) {
+            delay(250)
             channel.close()
         }
 
@@ -81,7 +83,7 @@ class OneShotChannelTest : FunSpec({
 
     test("for-each terminates after a single element") {
         val channel = OneShotChannel<String>()
-        thread {
+        launch(Dispatchers.Default) {
             channel.offer("hello")
         }
 
