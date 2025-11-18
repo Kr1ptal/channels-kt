@@ -3,12 +3,8 @@ package io.channels.core.blocking
 /**
  * Platform-specific lock with integrated condition variable support.
  *
- * This abstraction combines mutex and condition functionality in a single class,
- * which is necessary for proper pthread usage on native platforms where
- * `pthread_cond_wait()` requires the mutex to be passed explicitly.
- *
  * On JVM, this wraps `java.util.concurrent.locks.ReentrantLock` + `Condition`.
- * On Native (iOS), this uses `pthread_mutex_t` + `pthread_cond_t`.
+ * On Native (iOS), this uses `NSCondition`.
  */
 internal expect class PlatformLock() {
     /**
