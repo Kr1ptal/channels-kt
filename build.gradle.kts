@@ -39,7 +39,7 @@ jreleaser {
 
     // Set project info for deployment
     project {
-        description.set("High-performance Kotlin Multiplatform Channel abstraction for JVM and iOS.")
+        description.set("Kotlin Multiplatform channel-like abstraction over queues. Supports JVM and iOS targets")
         links {
             homepage.set("https://github.com/Kr1ptal/channels-kt")
         }
