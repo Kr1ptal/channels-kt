@@ -1,3 +1,5 @@
+import org.jetbrains.kotlin.gradle.dsl.KotlinMultiplatformExtension
+import org.jreleaser.gradle.plugin.dsl.deploy.maven.MavenDeployer
 import org.jreleaser.model.Active
 
 plugins {
@@ -5,19 +7,12 @@ plugins {
     alias(libs.plugins.jreleaser)
 }
 
-tasks.named("allTests") {
-    dependsOn(
-        subprojects.flatMap { subproject ->
-            subproject.tasks.matching { task ->
-                val hasTestName = task.name.contains("Test") || task.name.contains("Kotest")
-                task.group == "verification" && hasTestName
-            }
-        },
-    )
+tasks.register("test", Test::class) {
+    dependsOn(tasks.named("kotest"))
 }
 
 tasks.check {
-    dependsOn(tasks.named("allTests"))
+    dependsOn(tasks.named("kotest"))
 }
 
 allprojects {

@@ -1,8 +1,6 @@
 plugins {
     `project-conventions`
     `maven-publish-conventions`
-    alias(libs.plugins.ksp)
-    alias(libs.plugins.kotest)
 }
 
 kotlin {

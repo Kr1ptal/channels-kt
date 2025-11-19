@@ -42,13 +42,27 @@ fun isTestTask(name: String) = name.contains("test") || name.contains("Test")
 pluginManager.withPlugin("org.jetbrains.kotlin.multiplatform") {
     val libs = the<LibrariesForLibs>()
 
+    plugins {
+        alias(libs.plugins.ksp)
+        alias(libs.plugins.kotest)
+    }
+
     configure<KotlinMultiplatformExtension> {
         // Define standard targets
         jvm()
         iosArm64()           // Physical devices (for release builds)
         iosSimulatorArm64()  // Simulator for Apple Silicon (enables testing)
 
-        jvmToolchain(Constants.testJavaVersion.majorVersion.toInt())
+        jvmToolchain {
+            languageVersion = JavaLanguageVersion.of(Constants.testJavaVersion.majorVersion)
+            vendor = JvmVendorSpec.ADOPTIUM
+            implementation = JvmImplementation.VENDOR_SPECIFIC
+        }
+
+        // disable default KMP test task - we use `kotest` instead
+        tasks.matching { it.name == "jvmTest" }.configureEach {
+            enabled = false
+        }
 
         targets.configureEach {
             compilations.all {
