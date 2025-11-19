@@ -17,6 +17,7 @@ concurrency:
 
 jobs:
   test:
+    name: Test (JVM)
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5
@@ -34,11 +35,30 @@ jobs:
           name: report-lint
           path: build/reports/ktlint
 
-      - name: Gradle test
-        run: ./gradlew allTests --no-watch-fs --stacktrace -Dlog.level=debug
+      - name: Gradle test (JVM)
+        run: ./gradlew jvmKotest --no-watch-fs --stacktrace -Dlog.level=debug
 
       - uses: actions/upload-artifact@v5
         if: failure()
         with:
-          name: report-unit-test
-          path: build/reports/tests/unit-test
+          name: report-jvm-test
+          path: build/reports/tests/
+
+  test-ios:
+    name: Test (iOS Simulator)
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          persist-credentials: false
+
+      - uses: ./.github/actions/environment-setup
+
+      - name: Run iOS Simulator Tests
+        run: ./gradlew iosSimulatorArm64Test --no-watch-fs --stacktrace
+
+      - uses: actions/upload-artifact@v5
+        if: failure()
+        with:
+          name: report-ios-test
+          path: build/reports/tests/

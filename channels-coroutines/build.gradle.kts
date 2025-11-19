@@ -1,6 +1,8 @@
 plugins {
     `project-conventions`
     `maven-publish-conventions`
+    alias(libs.plugins.ksp)
+    alias(libs.plugins.kotest)
 }
 
 kotlin {
@@ -8,11 +10,6 @@ kotlin {
         val commonMain by getting {
             dependencies {
                 api(project(":channels-core"))
-            }
-        }
-
-        val jvmMain by getting {
-            dependencies {
                 implementation(libs.kotlin.coroutines)
             }
         }

@@ -16,7 +16,7 @@ concurrency:
 
 jobs:
   deploy-snapshot:
-    runs-on: ubuntu-latest
+    runs-on: macos-latest  # Changed to macOS to support iOS tests
 
     steps:
       - uses: actions/checkout@v5

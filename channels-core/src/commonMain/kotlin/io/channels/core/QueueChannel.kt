@@ -68,7 +68,7 @@ class QueueChannel<T : Any>(
         /**
          * Returns a [QueueChannel] that uses an unbounded MPSC (multiple-producer, single-consumer) queue.
          * */
-        @JvmOverloads
+        @PlatformOverloads
         fun <T : Any> mpscUnbounded(onClose: () -> Unit = {}): QueueChannel<T> {
             return QueueChannel(DefaultQueueFactory.mpscUnbounded(), onClose)
         }
@@ -77,7 +77,7 @@ class QueueChannel<T : Any>(
          * Returns a [QueueChannel] that uses an MPSC (multiple-producer, single-consumer) queue with a bounded
          * capacity.
          * */
-        @JvmOverloads
+        @PlatformOverloads
         fun <T : Any> mpscBounded(capacity: Int, onClose: () -> Unit = {}): QueueChannel<T> {
             return QueueChannel(DefaultQueueFactory.mpscBounded(capacity), onClose)
         }
@@ -85,7 +85,7 @@ class QueueChannel<T : Any>(
         /**
          * Returns a [QueueChannel] that uses an unbounded SPSC (single-producer, single-consumer) queue.
          * */
-        @JvmOverloads
+        @PlatformOverloads
         fun <T : Any> spscUnbounded(onClose: () -> Unit = {}): QueueChannel<T> {
             return QueueChannel(DefaultQueueFactory.spscUnbounded(), onClose)
         }
@@ -94,7 +94,7 @@ class QueueChannel<T : Any>(
          * Returns a [QueueChannel] that uses an SPSC (single-producer, single-consumer) queue with a bounded
          * capacity.
          * */
-        @JvmOverloads
+        @PlatformOverloads
         fun <T : Any> spscBounded(capacity: Int, onClose: () -> Unit = {}): QueueChannel<T> {
             return QueueChannel(DefaultQueueFactory.spscBounded(capacity), onClose)
         }

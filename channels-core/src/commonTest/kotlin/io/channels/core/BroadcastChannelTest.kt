@@ -2,8 +2,11 @@ package io.channels.core
 
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
-import java.util.concurrent.ConcurrentLinkedQueue
-import kotlin.concurrent.thread
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 
 class BroadcastChannelTest : FunSpec({
     test("elements are broadcast to all subscribers") {
@@ -85,27 +88,28 @@ class BroadcastChannelTest : FunSpec({
 
     test("concurrent subscribe/unsubscribe is thread-safe") {
         val channel = BroadcastChannel.spscUnbounded<String>()
-        val receivers = ConcurrentLinkedQueue<ChannelReceiver<String>>()
+        val mutex = Mutex()
+        val receivers = ArrayList<ChannelReceiver<String>>()
         val receiver = channel.subscribe()
 
-        val subscriberThread = thread {
+        val subscriberThread = launch(Dispatchers.Default) {
             repeat(100) {
-                receivers.add(channel.subscribe())
-                Thread.sleep(1)
+                mutex.withLock<Unit> { receivers.add(channel.subscribe()) }
+                delay(1)
             }
         }
 
-        val unsubscriberThread = thread {
-            while (subscriberThread.isAlive) {
-                receivers.poll()?.close()
-                Thread.sleep(1)
+        val unsubscriberThread = launch(Dispatchers.Default) {
+            while (subscriberThread.isActive) {
+                mutex.withLock<Unit> { receivers.removeFirstOrNull()?.close() }
+                delay(1)
             }
         }
 
         // Continuously offer while subscriptions change
         repeat(100) {
             channel.offer("msg$it")
-            Thread.sleep(1)
+            delay(1)
         }
 
         subscriberThread.join()
@@ -136,10 +140,10 @@ class BroadcastChannelTest : FunSpec({
         val receiver = channel.subscribe()
         val elements = mutableListOf<String>()
 
-        thread {
+        launch(Dispatchers.Default) {
             channel.offer("hello")
             channel.offer("world")
-            Thread.sleep(100)
+            delay(100)
             channel.close()
         }
 
