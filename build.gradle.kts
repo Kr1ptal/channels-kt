@@ -1,4 +1,3 @@
-import org.jetbrains.kotlin.gradle.dsl.KotlinMultiplatformExtension
 import org.jreleaser.gradle.plugin.dsl.deploy.maven.MavenDeployer
 import org.jreleaser.model.Active
 
@@ -50,22 +49,22 @@ jreleaser {
 
     val stagingDir = layout.buildDirectory.dir("staging-deploy")
 
+    // Dynamically configure artifactOverride for all non-JVM KMP targets
     fun MavenDeployer.configureKmpOverrides() {
-        // Dynamically configure artifactOverride for all non-JVM KMP targets
         rootProject.subprojects.forEach { subproject ->
-            subproject.plugins.withId("org.jetbrains.kotlin.multiplatform") {
-                val kotlin = subproject.extensions.getByType(KotlinMultiplatformExtension::class.java)
-                kotlin.targets.forEach { target ->
-                    // Skip JVM target (produces JAR, not klib)
-                    if (target.platformType.name != "jvm") {
-                        artifactOverride {
-                            groupId = "io.kriptal.channels"
-                            artifactId = "${subproject.name}-${target.name.lowercase()}"
-                            jar.set(false)
-                            sourceJar.set(false)
-                            javadocJar.set(false)
-                            verifyPom.set(false)
-                        }
+            kotlin.targets.forEach { target ->
+                // Skip JVM target (produces JAR, not klib)
+                if (target.platformType.name != "jvm") {
+                    val id = "${subproject.name}-${target.name.lowercase()}"
+                    println("Configuring jreleaser artifactOverride for '$id'")
+
+                    artifactOverride {
+                        groupId = "io.kriptal.channels"
+                        artifactId = id
+                        jar.set(false)
+                        sourceJar.set(false)
+                        javadocJar.set(false)
+                        verifyPom.set(false)
                     }
                 }
             }
