@@ -1,5 +1,5 @@
 [versions]
-kotlin = "2.2.21"
+kotlin = "2.3.0"
 ksp = "2.2.20-2.0.2" # format: <kotlin-version>-<ksp-version>
 junit = "6.0.1"
 kotest = "6.0.7"
