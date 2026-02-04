@@ -34,7 +34,7 @@ kotest-property = { module = "io.kotest:kotest-property", version.ref = "kotest"
 kotest-engine = { module = "io.kotest:kotest-framework-engine", version.ref = "kotest" }
 kotest-runner-junit5 = { module = "io.kotest:kotest-runner-junit5", version.ref = "kotest" }
 
-mockk = { module = "io.mockk:mockk-jvm", version = "1.14.7" }
+mockk = { module = "io.mockk:mockk-jvm", version = "1.14.9" }
 
 [bundles]
 ##################### TEST #####################
