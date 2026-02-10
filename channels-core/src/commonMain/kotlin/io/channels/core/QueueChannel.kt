@@ -2,6 +2,7 @@ package io.channels.core
 
 import io.channels.core.blocking.NotificationHandle
 import kotlinx.atomicfu.atomic
+import kotlin.jvm.JvmOverloads
 
 /**
  * A [Queue]-based [Channel].
@@ -68,7 +69,7 @@ class QueueChannel<T : Any>(
         /**
          * Returns a [QueueChannel] that uses an unbounded MPSC (multiple-producer, single-consumer) queue.
          * */
-        @PlatformOverloads
+        @JvmOverloads
         fun <T : Any> mpscUnbounded(onClose: () -> Unit = {}): QueueChannel<T> {
             return QueueChannel(DefaultQueueFactory.mpscUnbounded(), onClose)
         }
@@ -77,7 +78,7 @@ class QueueChannel<T : Any>(
          * Returns a [QueueChannel] that uses an MPSC (multiple-producer, single-consumer) queue with a bounded
          * capacity.
          * */
-        @PlatformOverloads
+        @JvmOverloads
         fun <T : Any> mpscBounded(capacity: Int, onClose: () -> Unit = {}): QueueChannel<T> {
             return QueueChannel(DefaultQueueFactory.mpscBounded(capacity), onClose)
         }
@@ -85,7 +86,7 @@ class QueueChannel<T : Any>(
         /**
          * Returns a [QueueChannel] that uses an unbounded SPSC (single-producer, single-consumer) queue.
          * */
-        @PlatformOverloads
+        @JvmOverloads
         fun <T : Any> spscUnbounded(onClose: () -> Unit = {}): QueueChannel<T> {
             return QueueChannel(DefaultQueueFactory.spscUnbounded(), onClose)
         }
@@ -94,7 +95,7 @@ class QueueChannel<T : Any>(
          * Returns a [QueueChannel] that uses an SPSC (single-producer, single-consumer) queue with a bounded
          * capacity.
          * */
-        @PlatformOverloads
+        @JvmOverloads
         fun <T : Any> spscBounded(capacity: Int, onClose: () -> Unit = {}): QueueChannel<T> {
             return QueueChannel(DefaultQueueFactory.spscBounded(capacity), onClose)
         }
