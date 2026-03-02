@@ -18,7 +18,7 @@ ktlint-gradle = { module = "org.jlleitschuh.gradle:ktlint-gradle", version = "12
 ktlint-bom = { module = "com.pinterest.ktlint:ktlint-bom", version.ref = "ktlint-tool" }
 ktlint-sarif = { module = "com.pinterest.ktlint:ktlint-cli-reporter-sarif", version.ref = "ktlint-tool" }
 
-jctools = { module = "org.jctools:jctools-core", version = "4.0.5" }
+jctools = { module = "org.jctools:jctools-core", version = "4.0.6" }
 
 # KMP concurrent collections
 atomicfu = { module = "org.jetbrains.kotlinx:atomicfu", version.ref = "atomicfu" }
