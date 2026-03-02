@@ -29,7 +29,7 @@ jobs:
       - name: Gradle ktlint
         run: ./gradlew ktlintCheck --no-watch-fs --stacktrace
 
-      - uses: actions/upload-artifact@v6
+      - uses: actions/upload-artifact@v7
         if: failure()
         with:
           name: report-lint
@@ -38,7 +38,7 @@ jobs:
       - name: Gradle test (JVM)
         run: ./gradlew jvmKotest --no-watch-fs --stacktrace -Dlog.level=debug
 
-      - uses: actions/upload-artifact@v6
+      - uses: actions/upload-artifact@v7
         if: failure()
         with:
           name: report-jvm-test
@@ -57,7 +57,7 @@ jobs:
       - name: Run iOS Simulator Tests
         run: ./gradlew iosSimulatorArm64Test --no-watch-fs --stacktrace
 
-      - uses: actions/upload-artifact@v6
+      - uses: actions/upload-artifact@v7
         if: failure()
         with:
           name: report-ios-test
