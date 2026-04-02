@@ -6,7 +6,7 @@ kotest = "6.0.7"
 ktlint-tool = "1.8.0"
 atomicfu = "0.32.0"
 stately = "2.1.0"
-dokka = "2.1.0"
+dokka = "2.2.0"
 
 [libraries]
 kotlin-bom = { module = "org.jetbrains.kotlin:kotlin-bom", version.ref = "kotlin" }
