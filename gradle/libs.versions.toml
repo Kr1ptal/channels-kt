@@ -1,6 +1,6 @@
 [versions]
 kotlin = "2.3.20"
-ksp = "2.3.6" # format: <kotlin-version>-<ksp-version>
+ksp = "2.3.7" # format: <kotlin-version>-<ksp-version>
 junit = "6.0.3"
 kotest = "6.0.7"
 ktlint-tool = "1.8.0"
