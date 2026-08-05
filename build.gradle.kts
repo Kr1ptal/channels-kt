@@ -16,7 +16,7 @@ tasks.check {
 
 allprojects {
     group = "io.kriptal.channels"
-    version = "1.0.2-SNAPSHOT"
+    version = "1.0.2"
 }
 
 jreleaser {
