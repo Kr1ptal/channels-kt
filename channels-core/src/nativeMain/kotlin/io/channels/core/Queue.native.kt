@@ -1,8 +1,8 @@
 package io.channels.core
 
 /**
- * iOS implementation of Queue interface.
- * Unlike JVM which uses a typealias to java.util.Queue, iOS requires an actual interface definition.
+ * Native implementation of Queue interface.
+ * Unlike JVM which uses a typealias to java.util.Queue, native targets require an actual interface definition.
  */
 actual interface Queue<T : Any> {
     /**

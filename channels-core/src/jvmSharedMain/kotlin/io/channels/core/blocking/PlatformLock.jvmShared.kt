@@ -4,7 +4,7 @@ import java.util.concurrent.locks.Condition
 import java.util.concurrent.locks.ReentrantLock
 
 /**
- * JVM implementation of [PlatformLock] using java.util.concurrent.locks.
+ * JVM and Android implementation of [PlatformLock] using java.util.concurrent.locks.
  *
  * This implementation wraps [ReentrantLock] and its associated [Condition]
  * to provide the integrated lock + condition API.

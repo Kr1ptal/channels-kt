@@ -1,11 +1,26 @@
+import com.android.build.api.dsl.LibraryExtension
 import org.gradle.accessors.dm.LibrariesForLibs
+import org.jetbrains.kotlin.gradle.ExperimentalKotlinGradlePluginApi
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 import org.jetbrains.kotlin.gradle.dsl.KotlinCommonCompilerOptions
 import org.jetbrains.kotlin.gradle.dsl.KotlinJvmCompilerOptions
 import org.jetbrains.kotlin.gradle.dsl.KotlinMultiplatformExtension
+import org.jetbrains.kotlin.gradle.plugin.KotlinHierarchyTemplate
 
 repositories {
+    google()
     mavenCentral()
+}
+
+pluginManager.withPlugin("com.android.library") {
+    configure<LibraryExtension> {
+        namespace = "io.kriptal.channels.${project.name.replace("-", ".")}"
+        compileSdk = 36
+
+        defaultConfig {
+            minSdk = 21
+        }
+    }
 }
 
 // disable runtime null call and argument checks for improved performance - they're left in tests to catch early bugs
@@ -48,9 +63,28 @@ pluginManager.withPlugin("org.jetbrains.kotlin.multiplatform") {
     }
 
     configure<KotlinMultiplatformExtension> {
+        if (pluginManager.hasPlugin("com.android.library")) {
+            @OptIn(ExperimentalKotlinGradlePluginApi::class)
+            applyHierarchyTemplate(KotlinHierarchyTemplate.default) {
+                common {
+                    group("jvmShared") {
+                        withJvm()
+                        withAndroidTarget()
+                    }
+                }
+            }
+        }
+
         // Define standard targets
         jvm()
+        if (pluginManager.hasPlugin("com.android.library")) {
+            androidTarget {
+                publishLibraryVariants("release")
+            }
+        }
+        macosArm64()
         iosArm64()           // Physical devices (for release builds)
+        iosX64()
         iosSimulatorArm64()  // Simulator for Apple Silicon (enables testing)
 
         jvmToolchain {

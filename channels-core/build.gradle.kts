@@ -1,4 +1,5 @@
 plugins {
+    id("com.android.library")
     `project-conventions`
     `maven-publish-conventions`
 }
@@ -12,7 +13,7 @@ kotlin {
             }
         }
 
-        val jvmMain by getting {
+        val jvmSharedMain by getting {
             dependencies {
                 implementation(libs.jctools)
             }

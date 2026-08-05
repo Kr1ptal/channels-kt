@@ -4,7 +4,7 @@ import kotlinx.cinterop.ExperimentalForeignApi
 import platform.Foundation.NSCondition
 
 /**
- * iOS implementation of [PlatformLock] using Foundation's [NSCondition].
+ * Native implementation of [PlatformLock] using Foundation's [NSCondition].
  *
  * This class is thread-safe and designed for concurrent access from
  * multiple threads. [NSCondition] ensures proper synchronization.

@@ -4,7 +4,7 @@ import kotlinx.atomicfu.atomic
 import kotlinx.cinterop.ExperimentalForeignApi
 
 /**
- * iOS implementation of DefaultQueueFactory using Foundation collections. Uses a custom, lock-free queue
+ * Native implementation of DefaultQueueFactory. Uses a custom, lock-free queue
  * implementation.
  */
 @OptIn(ExperimentalForeignApi::class)

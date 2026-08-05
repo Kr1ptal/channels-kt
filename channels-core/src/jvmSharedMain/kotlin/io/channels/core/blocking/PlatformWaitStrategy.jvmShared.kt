@@ -1,7 +1,7 @@
 package io.channels.core.blocking
 
 /**
- * JVM implementation of platform-specific wait strategies.
+ * JVM and Android implementation of platform-specific wait strategies.
  */
 internal actual object PlatformWaitStrategy {
     /**

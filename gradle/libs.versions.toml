@@ -1,5 +1,6 @@
 [versions]
 kotlin = "2.4.10"
+agp = "8.13.0"
 ksp = "2.3.9" # format: <kotlin-version>-<ksp-version>
 junit = "6.1.2"
 kotest = "6.0.7"
@@ -9,6 +10,7 @@ stately = "2.1.0"
 dokka = "2.2.0"
 
 [libraries]
+android-gradle = { module = "com.android.tools.build:gradle", version.ref = "agp" }
 kotlin-bom = { module = "org.jetbrains.kotlin:kotlin-bom", version.ref = "kotlin" }
 kotlin-gradle = { module = "org.jetbrains.kotlin:kotlin-gradle-plugin", version.ref = "kotlin" }
 kotlin-coroutines = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-core", version = "1.11.0" }

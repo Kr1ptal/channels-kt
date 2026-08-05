@@ -9,14 +9,14 @@ import platform.posix.sched_yield
 import platform.posix.timespec
 
 /**
- * iOS implementation of platform-specific wait strategies using Darwin/POSIX APIs.
+ * Native implementation of platform-specific wait strategies using Darwin/POSIX APIs.
  */
 @OptIn(ExperimentalForeignApi::class)
 internal actual object PlatformWaitStrategy {
     /**
      * Hint to the platform that the current thread is in a spin-wait loop.
-     * On iOS, we use sched_yield() as a hint to the scheduler.
-     * Note: iOS doesn't have a direct equivalent to Java's Thread.onSpinWait(),
+     * On native targets, we use sched_yield() as a hint to the scheduler.
+     * Note: Darwin doesn't have a direct equivalent to Java's Thread.onSpinWait(),
      * but sched_yield() serves a similar purpose.
      */
     actual fun onSpinWait() {
