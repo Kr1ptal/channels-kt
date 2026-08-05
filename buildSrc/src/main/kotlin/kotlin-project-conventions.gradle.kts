@@ -93,8 +93,10 @@ pluginManager.withPlugin("org.jetbrains.kotlin.multiplatform") {
             implementation = JvmImplementation.VENDOR_SPECIFIC
         }
 
-        // disable default KMP test task - we use `kotest` instead
-        tasks.matching { it.name == "jvmTest" }.configureEach {
+        // Disable default JVM and Android unit test tasks - we use `kotest` instead.
+        tasks.matching {
+            it.name == "jvmTest" || (it.name.startsWith("test") && it.name.endsWith("UnitTest"))
+        }.configureEach {
             enabled = false
         }
 
