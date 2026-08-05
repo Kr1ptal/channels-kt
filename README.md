@@ -34,6 +34,9 @@ dependencies {
     // Define a BOM and its version
     implementation(platform("io.kriptal.channels:channels-bom:1.0.2"))
 
+    // For the latest snapshot (requires the snapshot repository above)
+    // implementation(platform("io.kriptal.channels:channels-bom:1.0.3-SNAPSHOT"))
+
     // Define any required artifacts without version
     implementation("io.kriptal.channels:channels-core")
     implementation("io.kriptal.channels:channels-coroutines")
