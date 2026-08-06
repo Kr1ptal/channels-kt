@@ -36,13 +36,21 @@ jobs:
           path: build/reports/ktlint
 
       - name: Gradle test (JVM)
-        run: ./gradlew jvmKotest --no-watch-fs --stacktrace -Dlog.level=debug
+        run: >-
+          ./gradlew
+          :channels-core:jvmTest
+          :channels-coroutines:jvmTest
+          --no-watch-fs
+          --stacktrace
+          -Dlog.level=debug
 
       - uses: actions/upload-artifact@v7
         if: failure()
         with:
           name: report-jvm-test
-          path: build/reports/tests/
+          path: |
+            channels-core/build/reports/tests/
+            channels-coroutines/build/reports/tests/
 
   test-ios:
     name: Test (iOS Simulator)
@@ -55,10 +63,17 @@ jobs:
       - uses: ./.github/actions/environment-setup
 
       - name: Run iOS Simulator Tests
-        run: ./gradlew iosSimulatorArm64Test --no-watch-fs --stacktrace
+        run: >-
+          ./gradlew
+          :channels-core:iosSimulatorArm64Test
+          :channels-coroutines:iosSimulatorArm64Test
+          --no-watch-fs
+          --stacktrace
 
       - uses: actions/upload-artifact@v7
         if: failure()
         with:
           name: report-ios-test
-          path: build/reports/tests/
+          path: |
+            channels-core/build/reports/tests/
+            channels-coroutines/build/reports/tests/
