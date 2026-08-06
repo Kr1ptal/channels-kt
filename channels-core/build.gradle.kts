@@ -13,7 +13,7 @@ kotlin {
             }
         }
 
-        val jvmSharedMain by getting {
+        val jvmAndroidMain by getting {
             dependencies {
                 implementation(libs.jctools)
             }

@@ -1,11 +1,9 @@
 import com.android.build.api.dsl.LibraryExtension
 import org.gradle.accessors.dm.LibrariesForLibs
-import org.jetbrains.kotlin.gradle.ExperimentalKotlinGradlePluginApi
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 import org.jetbrains.kotlin.gradle.dsl.KotlinCommonCompilerOptions
 import org.jetbrains.kotlin.gradle.dsl.KotlinJvmCompilerOptions
 import org.jetbrains.kotlin.gradle.dsl.KotlinMultiplatformExtension
-import org.jetbrains.kotlin.gradle.plugin.KotlinHierarchyTemplate
 
 repositories {
     google()
@@ -63,17 +61,7 @@ pluginManager.withPlugin("org.jetbrains.kotlin.multiplatform") {
     }
 
     configure<KotlinMultiplatformExtension> {
-        if (pluginManager.hasPlugin("com.android.library")) {
-            @OptIn(ExperimentalKotlinGradlePluginApi::class)
-            applyHierarchyTemplate(KotlinHierarchyTemplate.default) {
-                common {
-                    group("jvmShared") {
-                        withJvm()
-                        withAndroidTarget()
-                    }
-                }
-            }
-        }
+        applyDefaultHierarchyTemplate()
 
         // Define standard targets
         jvm()
@@ -91,13 +79,6 @@ pluginManager.withPlugin("org.jetbrains.kotlin.multiplatform") {
             languageVersion = JavaLanguageVersion.of(Constants.testJavaVersion.majorVersion)
             vendor = JvmVendorSpec.ADOPTIUM
             implementation = JvmImplementation.VENDOR_SPECIFIC
-        }
-
-        // Disable default JVM and Android unit test tasks - we use `kotest` instead.
-        tasks.matching {
-            it.name == "jvmTest" || (it.name.startsWith("test") && it.name.endsWith("UnitTest"))
-        }.configureEach {
-            enabled = false
         }
 
         targets.configureEach {
@@ -132,11 +113,37 @@ pluginManager.withPlugin("org.jetbrains.kotlin.multiplatform") {
 
         // Configure standard source sets
         sourceSets {
+            val commonMain by getting
+
             val commonTest by getting {
                 dependencies {
                     implementation(libs.bundles.kotest)
                 }
             }
+
+            val jvmTest by getting {
+                dependencies {
+                    implementation(libs.kotest.runner.junit5)
+                }
+            }
+
+            if (pluginManager.hasPlugin("com.android.library")) {
+                val jvmAndroidMain by creating {
+                    dependsOn(commonMain)
+                }
+
+                val jvmMain by getting {
+                    dependsOn(jvmAndroidMain)
+                }
+
+                val androidMain by getting {
+                    dependsOn(jvmAndroidMain)
+                }
+            }
         }
+    }
+
+    tasks.named<Test>("jvmTest") {
+        useJUnitPlatform()
     }
 }
