@@ -6,14 +6,6 @@ plugins {
     alias(libs.plugins.jreleaser)
 }
 
-tasks.register("test", Test::class) {
-    dependsOn(tasks.named("kotest"))
-}
-
-tasks.check {
-    dependsOn(tasks.named("kotest"))
-}
-
 allprojects {
     group = "io.kriptal.channels"
     version = "1.0.3"
