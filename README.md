@@ -32,7 +32,7 @@ repositories {
 
 dependencies {
     // Define a BOM and its version
-    implementation(platform("io.kriptal.channels:channels-bom:1.0.2"))
+    implementation(platform("io.kriptal.channels:channels-bom:1.0.3"))
 
     // For the latest snapshot (requires the snapshot repository above)
     // implementation(platform("io.kriptal.channels:channels-bom:1.0.3-SNAPSHOT"))
