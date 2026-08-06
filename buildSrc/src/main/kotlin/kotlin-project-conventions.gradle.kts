@@ -1,4 +1,5 @@
 import com.android.build.api.dsl.LibraryExtension
+import io.kotest.framework.gradle.KotestGradleExtension
 import org.gradle.accessors.dm.LibrariesForLibs
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 import org.jetbrains.kotlin.gradle.dsl.KotlinCommonCompilerOptions
@@ -58,6 +59,10 @@ pluginManager.withPlugin("org.jetbrains.kotlin.multiplatform") {
     plugins {
         alias(libs.plugins.ksp)
         alias(libs.plugins.kotest)
+    }
+
+    configure<KotestGradleExtension> {
+        customGradleTask.convention(false)
     }
 
     configure<KotlinMultiplatformExtension> {
