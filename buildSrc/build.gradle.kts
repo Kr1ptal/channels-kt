@@ -14,6 +14,7 @@ dependencies {
     implementation(libs.android.gradle)
     implementation(libs.kotlin.gradle)
     implementation(libs.dokka.gradle)
+    implementation(libs.commons.compress)
 
     // for plugins, we need to depend on the actual jar before we can apply them to project from convention plugins
     implementation("com.google.devtools.ksp:com.google.devtools.ksp.gradle.plugin:${libs.versions.ksp.get()}")
