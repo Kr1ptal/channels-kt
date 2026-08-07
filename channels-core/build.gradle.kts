@@ -8,7 +8,6 @@ kotlin {
     sourceSets {
         val commonMain by getting {
             dependencies {
-                implementation(libs.atomicfu)
                 implementation(libs.stately.collections)
             }
         }

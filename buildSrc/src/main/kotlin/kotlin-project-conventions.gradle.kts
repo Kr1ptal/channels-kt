@@ -59,6 +59,7 @@ pluginManager.withPlugin("org.jetbrains.kotlin.multiplatform") {
     plugins {
         alias(libs.plugins.ksp)
         alias(libs.plugins.kotest)
+        alias(libs.plugins.atomicfu)
     }
 
     configure<KotestGradleExtension> {

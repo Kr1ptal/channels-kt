@@ -19,6 +19,7 @@ dependencies {
     // for plugins, we need to depend on the actual jar before we can apply them to project from convention plugins
     implementation("com.google.devtools.ksp:com.google.devtools.ksp.gradle.plugin:${libs.versions.ksp.get()}")
     implementation("io.kotest:io.kotest.gradle.plugin:${libs.versions.kotest.get()}")
+    implementation("org.jetbrains.kotlinx:atomicfu-gradle-plugin:${libs.versions.atomicfu.get()}")
 
     implementation(libs.ktlint.gradle)
     implementation(platform(libs.ktlint.bom))

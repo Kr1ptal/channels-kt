@@ -24,7 +24,6 @@ ktlint-sarif = { module = "com.pinterest.ktlint:ktlint-cli-reporter-sarif", vers
 jctools = { module = "org.jctools:jctools-core", version = "4.0.6" }
 
 # KMP concurrent collections
-atomicfu = { module = "org.jetbrains.kotlinx:atomicfu", version.ref = "atomicfu" }
 stately-collections = { module = "co.touchlab:stately-concurrent-collections", version.ref = "stately" }
 
 ##################### TEST #####################
@@ -49,5 +48,6 @@ kotest = { id = "io.kotest", version.ref = "kotest" }
 ksp = { id = "com.google.devtools.ksp", version.ref = "ksp" }
 kotlin-jvm = { id = "org.jetbrains.kotlin.jvm", version.ref = "kotlin" }
 kotlin-multiplatform = { id = "org.jetbrains.kotlin.multiplatform", version.ref = "kotlin" }
+atomicfu = { id = "org.jetbrains.kotlinx.atomicfu", version.ref = "atomicfu" }
 dokka = { id = "org.jetbrains.dokka", version.ref = "dokka" }
 jreleaser = { id = "org.jreleaser", version = "1.23.0" }
