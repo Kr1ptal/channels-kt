@@ -41,24 +41,26 @@ jreleaser {
 
     val stagingDir = layout.buildDirectory.dir("staging-deploy")
 
-    // Dynamically configure artifactOverride for all non-JVM KMP targets
     fun MavenDeployer.configureKmpOverrides() {
-        rootProject.subprojects.forEach { subproject ->
-            kotlin.targets.forEach { target ->
-                // Skip JVM target (produces JAR, not klib)
-                if (target.platformType.name != "jvm") {
-                    val id = "${subproject.name}-${target.name.lowercase()}"
-                    println("Configuring jreleaser artifactOverride for '$id'")
-
-                    artifactOverride {
-                        groupId = "io.kriptal.channels"
-                        artifactId = id
-                        jar.set(false)
-                        sourceJar.set(false)
-                        javadocJar.set(false)
-                        verifyPom.set(false)
-                    }
-                }
+        listOf(
+            "channels-core-android",
+            "channels-core-iosarm64",
+            "channels-core-iossimulatorarm64",
+            "channels-core-iosx64",
+            "channels-core-macosarm64",
+            "channels-coroutines-android",
+            "channels-coroutines-iosarm64",
+            "channels-coroutines-iossimulatorarm64",
+            "channels-coroutines-iosx64",
+            "channels-coroutines-macosarm64",
+        ).forEach { id ->
+            artifactOverride {
+                groupId = "io.kriptal.channels"
+                artifactId = id
+                jar.set(false)
+                sourceJar.set(false)
+                javadocJar.set(false)
+                verifyPom.set(false)
             }
         }
     }
