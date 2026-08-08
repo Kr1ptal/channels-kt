@@ -1,14 +1,19 @@
-import org.gradle.accessors.dm.LibrariesForLibs
+import org.gradle.api.artifacts.VersionCatalogsExtension
 import org.jlleitschuh.gradle.ktlint.reporter.ReporterType
 
 plugins {
+    idea
+    id("com.android.library")
+    kotlin("multiplatform")
     id("org.jlleitschuh.gradle.ktlint")
+    id("org.jetbrains.dokka")
+    id("kotlin-project-conventions")
 }
 
 ktlint {
-    val libs = the<LibrariesForLibs>()
+    val libs = extensions.getByType<VersionCatalogsExtension>().named("libs")
 
-    version = libs.versions.ktlint.tool.get()
+    version = libs.findVersion("ktlint-tool").get().requiredVersion
 
     reporters {
         reporter(ReporterType.HTML)
@@ -16,10 +21,9 @@ ktlint {
     }
 
     filter {
-        exclude { it.file.path.contains(layout.buildDirectory.dir("generated").get().toString()) }
+        exclude { it.file.toPath().startsWith(layout.buildDirectory.asFile.get().toPath()) }
     }
 
-    // format of rule keys defined at: https://pinterest.github.io/ktlint/latest/rules/configuration-ktlint/#disable-rules
     additionalEditorconfig.set(
         mapOf(
             "ktlint_code_style" to "intellij_idea",

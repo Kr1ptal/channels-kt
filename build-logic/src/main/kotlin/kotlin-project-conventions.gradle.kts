@@ -1,6 +1,5 @@
 import com.android.build.api.dsl.LibraryExtension
 import io.kotest.framework.gradle.KotestGradleExtension
-import org.gradle.accessors.dm.LibrariesForLibs
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 import org.jetbrains.kotlin.gradle.dsl.KotlinCommonCompilerOptions
 import org.jetbrains.kotlin.gradle.dsl.KotlinJvmCompilerOptions
@@ -13,21 +12,20 @@ repositories {
 
 pluginManager.withPlugin("com.android.library") {
     configure<LibraryExtension> {
-        namespace = "io.kriptal.channels.${project.name.replace("-", ".")}"
-        compileSdk = 36
+        namespace = Constants.androidNamespace(project.name)
+        compileSdk = Constants.ANDROID_COMPILE_SDK
 
         defaultConfig {
-            minSdk = 21
+            minSdk = Constants.ANDROID_MIN_SDK
         }
     }
 }
 
-// disable runtime null call and argument checks for improved performance - they're left in tests to catch early bugs
 val kotlinCompilerConfig: KotlinCommonCompilerOptions.(Boolean) -> Unit = { isTestTask ->
     val defaultArgs = listOf(
         "-progressive",
         // TODO re-add when this is fixed: https://youtrack.jetbrains.com/issue/KT-78923
-        //"-Xbackend-threads=0", // use all available processors
+        // "-Xbackend-threads=0", // use all available processors
     )
 
     val specificArgs = if (isTestTask) {
@@ -50,17 +48,14 @@ val kotlinCompilerConfig: KotlinCommonCompilerOptions.(Boolean) -> Unit = { isTe
     freeCompilerArgs.addAll(defaultArgs + specificArgs)
 }
 
-// need to do two separate checks for both cases, not ignoring case. Otherwise, we'd get a false positive for "kaptGenera`teSt`ubsKotlin"
 fun isTestTask(name: String) = name.contains("test") || name.contains("Test")
 
 pluginManager.withPlugin("org.jetbrains.kotlin.multiplatform") {
-    val libs = the<LibrariesForLibs>()
+    val libs = extensions.getByType<VersionCatalogsExtension>().named("libs")
 
-    plugins {
-        alias(libs.plugins.ksp)
-        alias(libs.plugins.kotest)
-        alias(libs.plugins.atomicfu)
-    }
+    pluginManager.apply("com.google.devtools.ksp")
+    pluginManager.apply("io.kotest")
+    pluginManager.apply("org.jetbrains.kotlinx.atomicfu")
 
     configure<KotestGradleExtension> {
         customGradleTask.convention(false)
@@ -69,17 +64,14 @@ pluginManager.withPlugin("org.jetbrains.kotlin.multiplatform") {
     configure<KotlinMultiplatformExtension> {
         applyDefaultHierarchyTemplate()
 
-        // Define standard targets
         jvm()
-        if (pluginManager.hasPlugin("com.android.library")) {
-            androidTarget {
-                publishLibraryVariants("release")
-            }
+        androidTarget {
+            publishLibraryVariants("release")
         }
         macosArm64()
-        iosArm64()           // Physical devices (for release builds)
+        iosArm64()
         iosX64()
-        iosSimulatorArm64()  // Simulator for Apple Silicon (enables testing)
+        iosSimulatorArm64()
 
         jvmToolchain {
             languageVersion = JavaLanguageVersion.of(Constants.testJavaVersion.majorVersion)
@@ -117,34 +109,31 @@ pluginManager.withPlugin("org.jetbrains.kotlin.multiplatform") {
             }
         }
 
-        // Configure standard source sets
         sourceSets {
             val commonMain by getting
 
             val commonTest by getting {
                 dependencies {
-                    implementation(libs.bundles.kotest)
+                    implementation(libs.findBundle("kotest").get())
                 }
             }
 
             val jvmTest by getting {
                 dependencies {
-                    implementation(libs.kotest.runner.junit5)
+                    implementation(libs.findLibrary("kotest-runner-junit5").get())
                 }
             }
 
-            if (pluginManager.hasPlugin("com.android.library")) {
-                val jvmAndroidMain by creating {
-                    dependsOn(commonMain)
-                }
+            val jvmAndroidMain by creating {
+                dependsOn(commonMain)
+            }
 
-                val jvmMain by getting {
-                    dependsOn(jvmAndroidMain)
-                }
+            val jvmMain by getting {
+                dependsOn(jvmAndroidMain)
+            }
 
-                val androidMain by getting {
-                    dependsOn(jvmAndroidMain)
-                }
+            val androidMain by getting {
+                dependsOn(jvmAndroidMain)
             }
         }
     }

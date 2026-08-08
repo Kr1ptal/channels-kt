@@ -2,7 +2,8 @@ import org.jreleaser.gradle.plugin.dsl.deploy.maven.MavenDeployer
 import org.jreleaser.model.Active
 
 plugins {
-    `project-conventions`
+    base
+    idea
     alias(libs.plugins.jreleaser)
 }
 

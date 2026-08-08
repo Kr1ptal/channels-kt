@@ -1,7 +1,6 @@
 plugins {
-    id("com.android.library")
-    `project-conventions`
-    `maven-publish-conventions`
+    id("project-conventions")
+    id("maven-publish-conventions")
 }
 
 kotlin {

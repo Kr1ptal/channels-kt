@@ -56,9 +56,6 @@ project.pluginManager.withPlugin("java-platform") {
 }
 
 project.pluginManager.withPlugin("org.jetbrains.kotlin.multiplatform") {
-    // Apply Dokka plugin for documentation generation
-    apply(plugin = "org.jetbrains.dokka")
-
     // Create javadoc jar from Dokka HTML output (Dokka V2 API)
     val dokkaGeneratePublicationHtml by tasks.getting
 
