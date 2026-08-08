@@ -9,7 +9,7 @@ plugins {
 
 allprojects {
     group = "io.kriptal.channels"
-    version = "1.0.4-SNAPSHOT"
+    version = "1.0.4"
 }
 
 jreleaser {
