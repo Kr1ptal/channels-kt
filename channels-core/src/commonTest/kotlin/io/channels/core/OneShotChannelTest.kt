@@ -2,9 +2,6 @@ package io.channels.core
 
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.launch
 
 class OneShotChannelTest : FunSpec({
     test("only a single offer is accepted") {
@@ -13,15 +10,15 @@ class OneShotChannelTest : FunSpec({
         channel.offer("world") shouldBe false
         channel.size shouldBe 1
 
-        channel.take() shouldBe "hello"
+        channel.poll() shouldBe "hello"
         channel.isClosed shouldBe true
     }
 
-    test("offer after take is rejected") {
+    test("offer after poll is rejected") {
         val channel = OneShotChannel<String>()
         channel.offer("hello") shouldBe true
         channel.size shouldBe 1
-        channel.take() shouldBe "hello"
+        channel.poll() shouldBe "hello"
 
         channel.offer("world") shouldBe false
         channel.size shouldBe 0
@@ -48,62 +45,13 @@ class OneShotChannelTest : FunSpec({
         channel.poll() shouldBe null
     }
 
-    test("take after close returns null") {
+    test("poll after close returns null") {
         val channel = OneShotChannel<String>()
 
         channel.offer("hello") shouldBe true
         channel.size shouldBe 1
-        channel.take() shouldBe "hello"
+        channel.poll() shouldBe "hello"
 
-        channel.take() shouldBe null
-    }
-
-    test("take blocks until element is available") {
-        val channel = OneShotChannel<String>()
-        launch(Dispatchers.Default) {
-            delay(250)
-            channel.offer("hello")
-        }
-
-        channel.size shouldBe 0
-        channel.take() shouldBe "hello"
-    }
-
-    test("take returns null on close without any element") {
-        val channel = OneShotChannel<String>()
-        launch(Dispatchers.Default) {
-            delay(250)
-            channel.close()
-        }
-
-        channel.size shouldBe 0
-        channel.take() shouldBe null
-        channel.isClosed shouldBe true
-    }
-
-    test("for-each terminates after a single element") {
-        val channel = OneShotChannel<String>()
-        launch(Dispatchers.Default) {
-            channel.offer("hello")
-        }
-
-        var count = 0
-        channel.forEach {
-            it shouldBe "hello"
-            count++
-        }
-        count shouldBe 1
-        channel.isClosed shouldBe true
-    }
-
-    test("for-each terminates immediately if channel is closed") {
-        val channel = OneShotChannel<String>()
-        channel.close()
-
-        var count = 0
-        channel.forEach { count++ }
-
-        count shouldBe 0
-        channel.isClosed shouldBe true
+        channel.poll() shouldBe null
     }
 })

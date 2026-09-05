@@ -17,7 +17,7 @@ val configureMavenCentralRepo: Action<RepositoryHandler> = Action {
 val configurePom = Action<MavenPom> {
     name = project.name
     description =
-        "High-performance Channel abstraction for Kotlin and JVM."
+        "High-performance Channel abstraction for Kotlin Multiplatform."
     url = "https://github.com/Kr1ptal/channels-kt"
 
     licenses {
@@ -31,6 +31,7 @@ val configurePom = Action<MavenPom> {
         developer {
             id = "kriptal"
             name = "Kriptal"
+            email = "matej@kriptal.io"
             organization = "Kriptal"
             organizationUrl = "https://kriptal.io"
         }

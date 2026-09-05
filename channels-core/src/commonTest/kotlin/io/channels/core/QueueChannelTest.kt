@@ -2,9 +2,6 @@ package io.channels.core
 
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.launch
 
 class QueueChannelTest : FunSpec({
     test("offers are accepted until capacity is reached") {
@@ -14,8 +11,8 @@ class QueueChannelTest : FunSpec({
         channel.offer("rejected") shouldBe false
         channel.size shouldBe 2
 
-        channel.take() shouldBe "hello"
-        channel.take() shouldBe "world"
+        channel.poll() shouldBe "hello"
+        channel.poll() shouldBe "world"
         channel.size shouldBe 0
     }
 
@@ -28,7 +25,7 @@ class QueueChannelTest : FunSpec({
         channel.offer("world") shouldBe false
         channel.size shouldBe 1
         channel.isClosed shouldBe true
-        channel.take() shouldBe "hello"
+        channel.poll() shouldBe "hello"
     }
 
     test("poll returns elements in order") {
@@ -52,87 +49,14 @@ class QueueChannelTest : FunSpec({
         channel.poll() shouldBe null
     }
 
-    test("take after close returns null when channel is empty") {
+    test("poll drains a closed channel before returning null") {
         val channel = QueueChannel.mpscBounded<String>(2)
 
         channel.offer("hello") shouldBe true
-        channel.take() shouldBe "hello"
+        channel.poll() shouldBe "hello"
         channel.close()
 
-        channel.take() shouldBe null
-    }
-
-    test("take blocks until element is available") {
-        val channel = QueueChannel.mpscBounded<String>(2)
-        launch(Dispatchers.Default) {
-            delay(250)
-            channel.offer("hello")
-        }
-
-        channel.size shouldBe 0
-        channel.take() shouldBe "hello"
-    }
-
-    test("take returns null on close without any element") {
-        val channel = QueueChannel.mpscBounded<String>(2)
-        launch(Dispatchers.Default) {
-            delay(250)
-            channel.close()
-        }
-
-        channel.size shouldBe 0
-        channel.take() shouldBe null
-        channel.isClosed shouldBe true
-    }
-
-    test("for-each processes all elements until close") {
-        val channel = QueueChannel.mpscBounded<String>(2)
-        val elements = mutableListOf<String>()
-
-        launch(Dispatchers.Default) {
-            channel.offer("hello")
-            channel.offer("world")
-            delay(100)
-            channel.close()
-        }
-
-        channel.forEach { elements.add(it) }
-
-        elements shouldBe listOf("hello", "world")
-        channel.isClosed shouldBe true
-    }
-
-    test("for-each async processes all elements until close") {
-        val channel = QueueChannel.mpscBounded<String>(2)
-        val elements = mutableListOf<String>()
-
-        launch(Dispatchers.Default) {
-            channel.forEach {
-                elements.add(it)
-            }
-        }
-
-        val job = launch(Dispatchers.Default) {
-            channel.offer("hello")
-            channel.offer("world")
-            delay(200)
-            channel.close()
-        }
-
-        job.join()
-        elements shouldBe listOf("hello", "world")
-        channel.isClosed shouldBe true
-    }
-
-    test("for-each terminates immediately if channel is closed and empty") {
-        val channel = QueueChannel.mpscBounded<String>(2)
-        channel.close()
-
-        var count = 0
-        channel.forEach { count++ }
-
-        count shouldBe 0
-        channel.isClosed shouldBe true
+        channel.poll() shouldBe null
     }
 
     test("unbounded queue accepts all offers") {
@@ -145,7 +69,7 @@ class QueueChannelTest : FunSpec({
         channel.size shouldBe 1000
 
         repeat(1000) {
-            channel.take() shouldBe "item$it"
+            channel.poll() shouldBe "item$it"
         }
 
         channel.size shouldBe 0

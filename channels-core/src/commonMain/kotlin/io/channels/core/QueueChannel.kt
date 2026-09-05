@@ -31,24 +31,6 @@ class QueueChannel<T : Any>(
         }
     }
 
-    override fun take(): T? {
-        while (true) {
-            val ret = poll()
-            if (ret != null) {
-                return ret
-            }
-
-            // check after polling, so we still drain the queue even if unsubscribed
-            if (isClosed) {
-                break
-            }
-
-            // if no next element, wait until the next event is available
-            notificationHandle.waitWithParking()
-        }
-        return null
-    }
-
     override fun poll(): T? {
         return queue.poll()
     }
@@ -58,12 +40,6 @@ class QueueChannel<T : Any>(
 
     override val size: Int
         get() = queue.size
-
-    override fun forEach(consumer: ChannelConsumer<in T>) {
-        while (true) {
-            consumer.accept(take() ?: break)
-        }
-    }
 
     companion object {
         /**

@@ -24,6 +24,7 @@ pluginManager.withPlugin("com.android.library") {
 val kotlinCompilerConfig: KotlinCommonCompilerOptions.(Boolean) -> Unit = { isTestTask ->
     val defaultArgs = listOf(
         "-progressive",
+        "-Xexpect-actual-classes",
         // TODO re-add when this is fixed: https://youtrack.jetbrains.com/issue/KT-78923
         // "-Xbackend-threads=0", // use all available processors
     )
@@ -33,19 +34,23 @@ val kotlinCompilerConfig: KotlinCommonCompilerOptions.(Boolean) -> Unit = { isTe
             "-opt-in=kotlin.RequiresOptIn,kotlin.ExperimentalStdlibApi,io.kotest.common.ExperimentalKotest",
         )
     } else {
-        listOf(
-            "-opt-in=kotlin.RequiresOptIn",
-            "-Xno-param-assertions",
-            "-Xno-call-assertions",
-            "-Xno-receiver-assertions",
-        )
+        listOf("-opt-in=kotlin.RequiresOptIn")
     }
 
+    val platformArgs = mutableListOf<String>()
     if (this is KotlinJvmCompilerOptions) {
         val version = if (isTestTask) Constants.testJavaVersion else Constants.compileJavaVersion
         jvmTarget = JvmTarget.fromTarget(version.majorVersion)
+        platformArgs += "-Xjvm-default=all"
+        if (!isTestTask) {
+            platformArgs += listOf(
+                "-Xno-param-assertions",
+                "-Xno-call-assertions",
+                "-Xno-receiver-assertions",
+            )
+        }
     }
-    freeCompilerArgs.addAll(defaultArgs + specificArgs)
+    freeCompilerArgs.addAll(defaultArgs + specificArgs + platformArgs)
 }
 
 fun isTestTask(name: String) = name.contains("test") || name.contains("Test")
@@ -65,6 +70,9 @@ pluginManager.withPlugin("org.jetbrains.kotlin.multiplatform") {
         applyDefaultHierarchyTemplate()
 
         jvm()
+        js {
+            nodejs()
+        }
         androidTarget {
             publishLibraryVariants("release")
         }
@@ -83,28 +91,6 @@ pluginManager.withPlugin("org.jetbrains.kotlin.multiplatform") {
             compilations.all {
                 compileTaskProvider.configure {
                     compilerOptions.kotlinCompilerConfig(isTestTask(name))
-
-                    compilerOptions {
-                        val isTestTask = name.contains("test", ignoreCase = true)
-                        val defaultArgs = listOf(
-                            "-progressive",
-                            "-Xjvm-default=all",
-                            "-Xexpect-actual-classes",
-                        )
-
-                        val specificArgs = if (isTestTask) {
-                            listOf("-opt-in=kotlin.RequiresOptIn,kotlin.ExperimentalStdlibApi,io.kotest.common.ExperimentalKotest")
-                        } else {
-                            listOf(
-                                "-opt-in=kotlin.RequiresOptIn",
-                                "-Xno-param-assertions",
-                                "-Xno-call-assertions",
-                                "-Xno-receiver-assertions",
-                            )
-                        }
-
-                        freeCompilerArgs.addAll(defaultArgs + specificArgs)
-                    }
                 }
             }
         }

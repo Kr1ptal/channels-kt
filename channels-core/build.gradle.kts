@@ -7,7 +7,14 @@ kotlin {
     sourceSets {
         val commonMain by getting {
             dependencies {
+                api(libs.kotlin.coroutines)
                 implementation(libs.stately.collections)
+            }
+        }
+
+        val commonTest by getting {
+            dependencies {
+                implementation(libs.kotlin.coroutines.test)
             }
         }
 

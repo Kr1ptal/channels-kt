@@ -1,6 +1,5 @@
 package io.channels.core.operator
 
-import io.channels.core.ChannelConsumer
 import io.channels.core.ChannelPredicate
 import io.channels.core.ChannelReceiver
 import io.channels.core.blocking.NotificationHandle
@@ -11,29 +10,13 @@ import io.channels.core.blocking.NotificationHandle
  * NOTE: Size of the channel represents the number of elements in [parent], regardless of [predicate] result.
  * */
 class FilterChannel<T : Any>(
-    private val parent: ChannelReceiver<T>,
+    protected override val parent: ChannelReceiver<T>,
     private val predicate: ChannelPredicate<in T>,
-) : ChannelReceiver<T> {
+) : PlatformOperatorChannel<T, T>() {
+    override fun transform(value: T): T? = if (predicate.test(value)) value else null
+
     override val notificationHandle: NotificationHandle
         get() = parent.notificationHandle
-
-    override fun forEach(consumer: ChannelConsumer<in T>) {
-        parent.forEach { next ->
-            if (predicate.test(next)) {
-                consumer.accept(next)
-            }
-        }
-    }
-
-    override fun take(): T? {
-        while (true) {
-            val next = parent.take() ?: break
-            if (predicate.test(next)) {
-                return next
-            }
-        }
-        return null
-    }
 
     override fun poll(): T? {
         while (true) {

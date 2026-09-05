@@ -3,9 +3,6 @@ package io.channels.core.operator
 import io.channels.core.QueueChannel
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.launch
 
 class MapNotNullChannelTest : FunSpec({
     test("filters out null mapped values") {
@@ -17,10 +14,10 @@ class MapNotNullChannelTest : FunSpec({
         source.offer(3)
         source.offer(4)
 
-        mapped.take() shouldBe 4
-        mapped.take() shouldBe 8
+        mapped.poll() shouldBe 4
+        mapped.poll() shouldBe 8
         source.close()
-        mapped.take() shouldBe null
+        mapped.poll() shouldBe null
     }
 
     test("poll skips null values") {
@@ -35,21 +32,18 @@ class MapNotNullChannelTest : FunSpec({
         mapped.poll() shouldBe null
     }
 
-    test("forEach only processes non-null mapped values") {
+    test("forEachSuspend only processes non-null mapped values") {
         val source = QueueChannel.spscUnbounded<Int>()
         val mapped = source.mapNotNull { if (it % 2 == 0) it * 2 else null }
         val results = mutableListOf<Int>()
 
-        launch(Dispatchers.Default) {
-            source.offer(1)
-            source.offer(2)
-            source.offer(3)
-            source.offer(4)
-            delay(100)
-            source.close()
-        }
+        source.offer(1)
+        source.offer(2)
+        source.offer(3)
+        source.offer(4)
+        source.close()
 
-        mapped.forEach { results.add(it) }
+        mapped.forEachSuspend { results.add(it) }
         results shouldBe listOf(4, 8)
     }
 
@@ -59,6 +53,6 @@ class MapNotNullChannelTest : FunSpec({
 
         mapped.close()
         mapped.isClosed shouldBe true
-        mapped.take() shouldBe null
+        mapped.poll() shouldBe null
     }
 })

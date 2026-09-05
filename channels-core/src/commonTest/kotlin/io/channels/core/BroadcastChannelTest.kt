@@ -17,10 +17,10 @@ class BroadcastChannelTest : FunSpec({
         channel.offer("hello") shouldBe true
         channel.offer("world") shouldBe true
 
-        receiver1.take() shouldBe "hello"
-        receiver1.take() shouldBe "world"
-        receiver2.take() shouldBe "hello"
-        receiver2.take() shouldBe "world"
+        receiver1.poll() shouldBe "hello"
+        receiver1.poll() shouldBe "world"
+        receiver2.poll() shouldBe "hello"
+        receiver2.poll() shouldBe "world"
     }
 
     test("offer returns false when no subscribers") {
@@ -34,15 +34,15 @@ class BroadcastChannelTest : FunSpec({
         val receiver2 = channel.subscribe()
 
         channel.offer("hello") shouldBe true
-        receiver1.take() shouldBe "hello"
+        receiver1.poll() shouldBe "hello"
 
         // receiver2's queue is full, receiver1 is empty
         channel.offer("world") shouldBe true
         // both receivers are full
         channel.offer("full") shouldBe false
 
-        receiver1.take() shouldBe "world"
-        receiver2.take() shouldBe "hello"
+        receiver1.poll() shouldBe "world"
+        receiver2.poll() shouldBe "hello"
     }
 
     test("closing broadcast channel closes all subscribers") {
@@ -53,10 +53,10 @@ class BroadcastChannelTest : FunSpec({
         channel.offer("hello")
         channel.close()
 
-        receiver1.take() shouldBe "hello"
-        receiver1.take() shouldBe null
-        receiver2.take() shouldBe "hello"
-        receiver2.take() shouldBe null
+        receiver1.poll() shouldBe "hello"
+        receiver1.poll() shouldBe null
+        receiver2.poll() shouldBe "hello"
+        receiver2.poll() shouldBe null
 
         receiver1.isClosed shouldBe true
         receiver2.isClosed shouldBe true
@@ -68,7 +68,7 @@ class BroadcastChannelTest : FunSpec({
 
         val receiver = channel.subscribe()
         receiver.isClosed shouldBe true
-        receiver.take() shouldBe null
+        receiver.poll() shouldBe null
     }
 
     test("unsubscribe removes receiver") {
@@ -82,8 +82,8 @@ class BroadcastChannelTest : FunSpec({
         channel.size shouldBe 1
 
         channel.offer("hello") shouldBe true
-        receiver1.take() shouldBe null
-        receiver2.take() shouldBe "hello"
+        receiver1.poll() shouldBe null
+        receiver2.poll() shouldBe "hello"
     }
 
     test("concurrent subscribe/unsubscribe is thread-safe") {
@@ -130,26 +130,8 @@ class BroadcastChannelTest : FunSpec({
         }
 
         repeat(1000) {
-            receiver1.take() shouldBe "item$it"
-            receiver2.take() shouldBe "item$it"
+            receiver1.poll() shouldBe "item$it"
+            receiver2.poll() shouldBe "item$it"
         }
-    }
-
-    test("forEach processes all elements until close") {
-        val channel = BroadcastChannel.mpscBounded<String>(2)
-        val receiver = channel.subscribe()
-        val elements = mutableListOf<String>()
-
-        launch(Dispatchers.Default) {
-            channel.offer("hello")
-            channel.offer("world")
-            delay(100)
-            channel.close()
-        }
-
-        receiver.forEach { elements.add(it) }
-
-        elements shouldBe listOf("hello", "world")
-        receiver.isClosed shouldBe true
     }
 })

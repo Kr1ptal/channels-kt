@@ -1,6 +1,5 @@
 package io.channels.core.operator
 
-import io.channels.core.ChannelConsumer
 import io.channels.core.ChannelFunction
 import io.channels.core.ChannelReceiver
 import io.channels.core.blocking.NotificationHandle
@@ -9,21 +8,13 @@ import io.channels.core.blocking.NotificationHandle
  * Map each element from [parent] using [mapper], from type [T] to [R].
  * */
 class MapChannel<T : Any, R : Any>(
-    private val parent: ChannelReceiver<T>,
+    protected override val parent: ChannelReceiver<T>,
     private val mapper: ChannelFunction<T, R>,
-) : ChannelReceiver<R> {
+) : PlatformOperatorChannel<T, R>() {
+    override fun transform(value: T): R? = mapper.apply(value)
+
     override val notificationHandle: NotificationHandle
         get() = parent.notificationHandle
-
-    override fun forEach(consumer: ChannelConsumer<in R>) {
-        parent.forEach { next ->
-            consumer.accept(mapper.apply(next))
-        }
-    }
-
-    override fun take(): R? {
-        return mapper.apply(parent.take() ?: return null)
-    }
 
     override fun poll(): R? {
         val next = parent.poll()
