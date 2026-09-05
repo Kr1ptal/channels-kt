@@ -39,7 +39,6 @@ jobs:
         run: >-
           ./gradlew
           :channels-core:jvmTest
-          :channels-coroutines:jvmTest
           --no-watch-fs
           --stacktrace
           -Dlog.level=debug
@@ -48,9 +47,30 @@ jobs:
         if: failure()
         with:
           name: report-jvm-test
-          path: |
-            channels-core/build/reports/tests/
-            channels-coroutines/build/reports/tests/
+          path: channels-core/build/reports/tests/
+
+  test-js:
+    name: Test (JavaScript)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+
+      - uses: ./.github/actions/environment-setup
+
+      - name: Gradle test (JavaScript)
+        run: >-
+          ./gradlew
+          :channels-core:jsNodeTest
+          --no-watch-fs
+          --stacktrace
+
+      - uses: actions/upload-artifact@v7
+        if: failure()
+        with:
+          name: report-js-test
+          path: channels-core/build/reports/tests/
 
   test-ios:
     name: Test (iOS Simulator)
@@ -66,7 +86,6 @@ jobs:
         run: >-
           ./gradlew
           :channels-core:iosSimulatorArm64Test
-          :channels-coroutines:iosSimulatorArm64Test
           --no-watch-fs
           --stacktrace
 
@@ -74,6 +93,4 @@ jobs:
         if: failure()
         with:
           name: report-ios-test
-          path: |
-            channels-core/build/reports/tests/
-            channels-coroutines/build/reports/tests/
+          path: channels-core/build/reports/tests/

@@ -9,23 +9,32 @@ import java.util.concurrent.locks.ReentrantLock
  * This implementation wraps [ReentrantLock] and its associated [Condition]
  * to provide the integrated lock + condition API.
  */
-internal actual class PlatformLock {
+internal class PlatformLock {
     private val lock = ReentrantLock()
     private val condition: Condition = lock.newCondition()
 
-    actual fun lock() {
+    fun lock() {
         lock.lock()
     }
 
-    actual fun unlock() {
+    fun unlock() {
         lock.unlock()
     }
 
-    actual fun await() {
+    fun await() {
         condition.await()
     }
 
-    actual fun signalAll() {
+    fun signalAll() {
         condition.signalAll()
+    }
+}
+
+internal inline fun <T> PlatformLock.withLock(block: () -> T): T {
+    lock()
+    try {
+        return block()
+    } finally {
+        unlock()
     }
 }

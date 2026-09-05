@@ -1,6 +1,5 @@
 package io.channels.core.operator
 
-import io.channels.core.ChannelConsumer
 import io.channels.core.ChannelFunction
 import io.channels.core.ChannelReceiver
 import io.channels.core.blocking.NotificationHandle
@@ -12,30 +11,13 @@ import io.channels.core.blocking.NotificationHandle
  * NOTE: Size of the channel represents the number of elements in [parent], regardless of [mapper] result.
  * */
 class MapNotNullChannel<T : Any, R : Any>(
-    private val parent: ChannelReceiver<T>,
+    protected override val parent: ChannelReceiver<T>,
     private val mapper: ChannelFunction<T, R?>,
-) : ChannelReceiver<R> {
+) : PlatformOperatorChannel<T, R>() {
+    override fun transform(value: T): R? = mapper.apply(value)
+
     override val notificationHandle: NotificationHandle
         get() = parent.notificationHandle
-
-    override fun forEach(consumer: ChannelConsumer<in R>) {
-        parent.forEach { next ->
-            val mapped = mapper.apply(next)
-            if (mapped != null) {
-                consumer.accept(mapped)
-            }
-        }
-    }
-
-    override fun take(): R? {
-        while (true) {
-            val mapped = mapper.apply(parent.take() ?: break)
-            if (mapped != null) {
-                return mapped
-            }
-        }
-        return null
-    }
 
     override fun poll(): R? {
         while (true) {

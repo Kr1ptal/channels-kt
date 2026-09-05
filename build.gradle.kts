@@ -31,7 +31,7 @@ jreleaser {
 
     // Set project info for deployment
     project {
-        description.set("Kotlin Multiplatform channel-like abstraction over queues. Supports JVM and iOS targets")
+        description.set("Kotlin Multiplatform channel-like abstraction over queues. Supports JVM, Android, JS, and Apple targets")
         links {
             homepage.set("https://github.com/Kr1ptal/channels-kt")
         }
@@ -48,12 +48,8 @@ jreleaser {
             "channels-core-iosarm64",
             "channels-core-iossimulatorarm64",
             "channels-core-iosx64",
+            "channels-core-js",
             "channels-core-macosarm64",
-            "channels-coroutines-android",
-            "channels-coroutines-iosarm64",
-            "channels-coroutines-iossimulatorarm64",
-            "channels-coroutines-iosx64",
-            "channels-coroutines-macosarm64",
         ).forEach { id ->
             artifactOverride {
                 groupId = "io.kriptal.channels"

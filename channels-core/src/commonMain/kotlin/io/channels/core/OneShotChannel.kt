@@ -27,25 +27,6 @@ class OneShotChannel<T : Any> @JvmOverloads constructor(value: T? = null) : Chan
         }
     }
 
-    override fun take(): T? {
-        while (true) {
-            val ret = poll()
-            if (ret != null) {
-                return ret
-            }
-
-            // check after polling, so we still drain the queue even if unsubscribed
-            if (isClosed) {
-                break
-            }
-
-            // if no next element, wait until next event is available
-            notificationHandle.waitWithParking()
-        }
-
-        return null
-    }
-
     @Suppress("UNCHECKED_CAST")
     override fun poll(): T? {
         while (true) {
@@ -67,10 +48,6 @@ class OneShotChannel<T : Any> @JvmOverloads constructor(value: T? = null) : Chan
             val ret = state.value
             return if (ret == null || ret === CONSUMED) 0 else 1
         }
-
-    override fun forEach(consumer: ChannelConsumer<in T>) {
-        consumer.accept(take() ?: return)
-    }
 
     companion object {
         private val CONSUMED = Any()

@@ -11,8 +11,17 @@ It also contains specialized implementations of channels, such as <b>BroadcastCh
 - SPSC (single-producer, single-consumer) queues
 - Broadcast channels
 - One-shot channels
-- Different blocking wait strategies: sleeping, parking, yielding, busy spinning, suspending (coroutines)
+- JVM/Android blocking wait strategies: sleeping, parking, yielding, and busy spinning
+- Suspending receivers with coroutines on every target
 - Channel operators: `map`, `mapNotNull`, `filter`
+
+Supported Kotlin Multiplatform targets are JVM, Android, JavaScript (Node.js), macOS ARM64, and iOS
+(ARM64, x64, and simulator ARM64).
+
+The common API exposes non-blocking `offer()` and `poll()` operations. Synchronous `take()`, `forEach()`, and blocking
+strategy member functions are available only from JVM/Android source sets, including ordinary Java calls such as
+`receiver.withBusySpinBlockingStrategy().take()`. JavaScript and Apple targets should use the suspending APIs from
+`channels-core` when they need to wait for values.
 
 ## 🚀 Quickstart
 
@@ -37,9 +46,8 @@ dependencies {
     // For the latest snapshot (requires the snapshot repository above)
     // implementation(platform("io.kriptal.channels:channels-bom:1.0.5-SNAPSHOT"))
 
-    // Define any required artifacts without version
+    // Core includes non-blocking queues and common coroutine-based receivers
     implementation("io.kriptal.channels:channels-core")
-    implementation("io.kriptal.channels:channels-coroutines")
 }
 ```
 
@@ -53,12 +61,12 @@ channel.offer(3)
 
 // iterate over the channel, until the channel is closed. 
 
-// blocking the current thread
+// JVM/Android only: blocks the current thread
 channel.forEach { element ->
     println(element)
 }
 
-// needs "channels-coroutines" dependency
+// common suspending API from channels-core
 channel.forEachSuspend { element ->
     println(element)
 }
