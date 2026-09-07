@@ -16,10 +16,6 @@
 
 package io.channels.core.blocking
 
-import java.lang.invoke.MethodHandle
-import java.lang.invoke.MethodHandles
-import java.lang.invoke.MethodType
-
 /**
  * This class captures possible hints that may be used by some
  * runtimes to improve code performance. It is intended to capture hinting
@@ -28,18 +24,23 @@ import java.lang.invoke.MethodType
  * versions.
  */
 internal object ThreadHints {
-    private val ON_SPIN_WAIT_METHOD_HANDLE: MethodHandle?
-
-    init {
-        val lookup = MethodHandles.lookup()
-
-        var methodHandle: MethodHandle? = null
-        try {
-            methodHandle = lookup.findStatic(Thread::class.java, "onSpinWait", MethodType.methodType(Void.TYPE))
-        } catch (_: Exception) {
+    /**
+     * Resolved once, then invoked through a plain virtual call on the spin-wait path.
+     *
+     * Deliberately not a [java.lang.invoke.MethodHandle]: `MethodHandle.invokeExact` compiles to the
+     * `invoke-polymorphic` dex opcode, which raises the minimum Android API level of any consumer APK to 26.
+     */
+    private val ON_SPIN_WAIT: Runnable = try {
+        // Probe for java.lang.Thread.onSpinWait() (Java 9+, Android API 33+) before referencing it. On runtimes
+        // without it the reference below is never loaded, so it can never fail verification.
+        Thread::class.java.getMethod("onSpinWait")
+        object : Runnable {
+            override fun run() = Thread.onSpinWait()
         }
-
-        ON_SPIN_WAIT_METHOD_HANDLE = methodHandle
+    } catch (_: Throwable) {
+        object : Runnable {
+            override fun run() = Unit
+        }
     }
 
     /**
@@ -50,13 +51,7 @@ internal object ThreadHints {
      * may take action to improve the performance of invoking spin-wait loop constructions.
      */
     fun onSpinWait() {
-        // Call java.lang.Thread.onSpinWait() on Java SE versions that support it. Do nothing otherwise.
-        // This should optimize away to either nothing or to an inlining of java.lang.Thread.onSpinWait()
-        if (ON_SPIN_WAIT_METHOD_HANDLE != null) {
-            try {
-                ON_SPIN_WAIT_METHOD_HANDLE.invokeExact()
-            } catch (_: Throwable) {
-            }
-        }
+        // Call java.lang.Thread.onSpinWait() on runtimes that support it. Do nothing otherwise.
+        ON_SPIN_WAIT.run()
     }
 }

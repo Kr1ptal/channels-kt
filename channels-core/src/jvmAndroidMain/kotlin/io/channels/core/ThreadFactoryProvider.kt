@@ -1,7 +1,5 @@
 package io.channels.core
 
-import java.lang.invoke.MethodHandles
-import java.lang.invoke.MethodType
 import java.util.concurrent.ThreadFactory
 
 /**
@@ -12,17 +10,14 @@ internal object ThreadFactoryProvider {
     private val THREAD_FACTORY: ThreadFactory
 
     init {
+        // Plain reflection rather than java.lang.invoke: MethodHandle invocation compiles to the
+        // `invoke-polymorphic` dex opcode, which raises the minimum Android API level of any consumer APK to 26.
         val virtualThreadFactory = runCatching {
-            val threadBuilderClass = Thread::class.java.getMethod("ofVirtual").returnType // Thread.Builder.OfVirtual
+            val ofVirtual = Thread::class.java.getMethod("ofVirtual")
+            val builder = ofVirtual.invoke(null)
 
-            val factory = MethodHandles.lookup().findVirtual(
-                threadBuilderClass,
-                "factory",
-                MethodType.methodType(ThreadFactory::class.java), // The method returns a ThreadFactory
-            ).bindTo(Thread::class.java.getMethod("ofVirtual").invoke(null))
-
-            // invoke while catching to see if we need to set "--enable-preview" flag
-            factory.invokeExact() as? ThreadFactory
+            // Thread.Builder.OfVirtual is public, so `factory` is reachable reflectively
+            ofVirtual.returnType.getMethod("factory").invoke(builder) as? ThreadFactory
         }.getOrNull()
 
         THREAD_FACTORY = virtualThreadFactory ?: ThreadFactory { r -> Thread(r) }
