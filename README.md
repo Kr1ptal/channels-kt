@@ -44,7 +44,7 @@ dependencies {
     implementation(platform("io.kriptal.channels:channels-bom:2.0.0"))
 
     // For the latest snapshot (requires the snapshot repository above)
-    // implementation(platform("io.kriptal.channels:channels-bom:1.0.5-SNAPSHOT"))
+    // implementation(platform("io.kriptal.channels:channels-bom:2.0.1-SNAPSHOT"))
 
     // Core includes non-blocking queues and common coroutine-based receivers
     implementation("io.kriptal.channels:channels-core")
