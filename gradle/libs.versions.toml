@@ -47,4 +47,4 @@ kotlin-jvm = { id = "org.jetbrains.kotlin.jvm", version.ref = "kotlin" }
 kotlin-multiplatform = { id = "org.jetbrains.kotlin.multiplatform", version.ref = "kotlin" }
 atomicfu = { id = "org.jetbrains.kotlinx.atomicfu", version.ref = "atomicfu" }
 dokka = { id = "org.jetbrains.dokka", version.ref = "dokka" }
-jreleaser = { id = "org.jreleaser", version = "1.23.0" }
+jreleaser = { id = "org.jreleaser", version = "1.25.0" }
